@@ -1,17 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-// Possible injection
-// Unchecked Input: If the contract doesn't validate or sanitize input strings, it could be vulnerable to injection attacks. Always validate and sanitize user input before processing or storing it.
-// Reentrancy: If the contract interacts with external contracts or sends transactions based on string input, it could be vulnerable to reentrancy attacks. Ensure that string input does not trigger unexpected behavior or interactions with other contracts.
-// Limit Input Length: Limit the length of input strings to prevent buffer overflow or out-of-gas attacks. Use modifiers such as bytes or bytes32 to specify fixed-size string storage when possible.
-// Use Secure Libraries: Utilize secure libraries and functions for string manipulation to minimize the risk of vulnerabilities. Avoid custom string manipulation logic unless necessary and thoroughly tested.
-// Escape Special Characters: If the contract interacts with external systems or databases, properly escape or encode special characters to prevent injection attacks such as SQL injection.
-// Audit Contracts: Regularly audit contract code for security vulnerabilities, including string handling vulnerabilities. Follow best practices and security guidelines recommended by the Ethereum community.
+import "../libraries/Generator.sol";
 
-//NOTES: Change strings to bytes
-
-//This Is the Abstract collection that must be implemented by the actual collection instance
 abstract contract Collection {
 	enum TraitType {
 		Options,
@@ -19,7 +10,7 @@ abstract contract Collection {
 	}
 
 	//This represents all the collectionTraits
-	uint8 traitsIndex;
+	uint8 traitsLength;
 	mapping(uint8 => string) traitLabels;
 	mapping(uint8 => TraitType) atributeTypes;
 	mapping(uint8 => uint8) traitChances; //Percentage between 0 and 99
@@ -33,48 +24,64 @@ abstract contract Collection {
 	mapping(uint8 => uint32) traitNumberMin;
 	mapping(uint8 => uint32) traitNumberMax;
 
+	//Indexing
+	mapping(string => uint8) traitKeysByName;
+	mapping(uint8 => uint8) traitKeysByIndex;
+
 	function addOptionsTrait(
+		uint8 traitKey,
 		string memory traitLabel,
 		uint8 traitChance,
 		string[] memory valueLabels,
 		uint8[] memory chances
-	) external addBaseTrait(traitLabel, TraitType.Options, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, TraitType.Options, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(sum(chances) == 100);
-		traitOptionChances[traitsIndex] = chances;
-		traitOptionLabels[traitsIndex] = valueLabels;
+		traitOptionChances[traitKey] = chances;
+		traitOptionLabels[traitKey] = valueLabels;
 	}
 
 	function addOptionsWithImageTrait(
+		uint8 traitKey,
 		string memory traitLabel,
 		uint8 traitChance,
 		string[] memory valueLabels,
 		uint8[] memory chances,
 		string[] memory images
-	) external addBaseTrait(traitLabel, TraitType.Options, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, TraitType.Options, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(sum(chances) == 100);
-		traitOptionChances[traitsIndex] = chances;
-		traitOptionLabels[traitsIndex] = valueLabels;
-		traitOptionImages[traitsIndex] = images;
+		traitOptionChances[traitKey] = chances;
+		traitOptionLabels[traitKey] = valueLabels;
+		traitOptionImages[traitKey] = images;
 	}
 
-	function addNumberTrait(string memory traitLabel, uint8 traitChance, uint8 min, uint8 max) external addBaseTrait(traitLabel, TraitType.Number, traitChance) {
+	function addNumberTrait(
+		uint8 traitKey,
+		string memory traitLabel,
+		uint8 traitChance,
+		uint8 min,
+		uint8 max
+	) external addBaseTrait(traitKey, traitLabel, TraitType.Number, traitChance) {
 		require(min <= max, "Min should be less than max");
-		traitNumberMin[traitsIndex] = min;
-		traitNumberMax[traitsIndex] = max;
+		traitNumberMin[traitKey] = min;
+		traitNumberMax[traitKey] = max;
 	}
 
 	modifier addBaseTrait(
+		uint8 traitKey,
 		string memory traitLabel,
 		TraitType traitType,
 		uint8 traitChance
 	) {
-		traitLabels[traitsIndex] = traitLabel;
-		atributeTypes[traitsIndex] = traitType;
-		traitChances[traitsIndex] = traitChance - 1; //0 will represent 1% and 99 100%
+		require(traitChance > 0 && traitChance <= 100, "Chance must be a positive number less than 100");
+		traitLabels[traitKey] = traitLabel;
+		atributeTypes[traitKey] = traitType;
+		traitChances[traitKey] = traitChance - 1; //0 will represent 1% and 99 100%
+		traitKeysByName[traitLabel] = traitKey;
+		traitKeysByIndex[traitsLength] = traitKey;
 		_;
-		traitsIndex++;
+		traitsLength++;
 	}
 
 	function getTraitNumberConfig(uint8 traitKeyId) external view returns (uint32 min, uint32 max) {
@@ -98,7 +105,7 @@ abstract contract Collection {
 	}
 
 	function getNumberOfTraits() external view returns (uint8 numberOfTraits) {
-		return traitsIndex;
+		return traitsLength;
 	}
 
 	function getTraitOptionChances(uint8 traitKeyId) external view returns (uint8[] memory) {
@@ -115,6 +122,18 @@ abstract contract Collection {
 
 	function getTraitChance(uint8 traitKeyId) external view returns (uint8) {
 		return traitChances[traitKeyId];
+	}
+
+	function getTraitKeyByIndex(uint8 traitIndex) external view returns (uint8) {
+		return traitKeysByIndex[traitIndex];
+	}
+
+	function generateNFT(uint genes) external view returns (Generator.NFT memory) {
+		return Generator.generateNFT(Collection(this), genes);
+	}
+
+	function getTraitKeyByName(string memory traitName) external view returns (uint8) {
+		return traitKeysByName[traitName];
 	}
 
 	//helpers

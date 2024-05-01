@@ -18,13 +18,26 @@ describe("NFT Generator", function () {
     );
     const genesisCollection = await GenesisCollection.deploy();
 
+    const NFTRandomManager = await ethers.getContractFactory(
+      "NFTRandomManager"
+    );
+    const nftRandomManager = await NFTRandomManager.deploy(
+      /* VRF Subscription Id */ 5
+    );
+
     const BasicNFT = await ethers.getContractFactory("BasicNFT");
     const basicNFT = await BasicNFT.deploy(
       owner.address,
-      genesisCollection.target
+      genesisCollection.target,
+      nftRandomManager.target
     );
 
     await setupCharacterAttributes(genesisCollection);
+
+    const result = await genesisCollection.generateNFT(
+      4567867867856785995002450n
+    );
+    console.log(result);
 
     return { genesisCollection, basicNFT, owner };
   }
@@ -32,6 +45,14 @@ describe("NFT Generator", function () {
   describe("Basic NFT", function () {
     it("Mint token with genes 238957810045891491295781004589144500045045000450", async function () {
       const { genesisCollection, basicNFT, owner } = await deployContracts();
+
+      await basicNFT.addExample();
+      await basicNFT.addExample();
+      await basicNFT.addExample();
+
+      const result = await basicNFT.example(1);
+      console.log(result);
+
       let randomNumbers = [
         "23895781004589149129578100458914450004567867867856785995002450",
         // "23895781004589149112352957810045891445000456778885695045000450",
@@ -46,7 +67,11 @@ describe("NFT Generator", function () {
 
       for (let index = 0; index < randomNumbers.length; index++) {
         let randomNumber = randomNumbers[index];
-        await basicNFT.safeMint(owner.address, randomNumber, `Token ${index}`);
+        await basicNFT.safeMintTest(
+          owner.address,
+          randomNumber,
+          `Token ${index}`
+        );
         let tokenId = index;
         const nftJSON = await basicNFT.getNFTDetails(tokenId);
 
@@ -130,10 +155,12 @@ async function setupCharacterAttributes(genesisCollectionInstance) {
   let armsPinkSVG =
     "<g class='monster-left-arm'> <path id='Shape' d='M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z' transform='translate(-114.73)' style='fill: #df4d60' /></g><g class='monster-right-arm'> <path id='Shape-2' data-name='Shape' d='M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z' transform='translate(-114.73)' style='fill: #df4d60' /></g>";
   // Numerical attributes with rarity
-  await genesisCollectionInstance.addNumberTrait("Strength", 100, 0, 100);
+  await genesisCollectionInstance.addNumberTrait(11, "Strength", 100, 0, 100);
+  await genesisCollectionInstance.addNumberTrait(12, "Strengtsh", 1, 0, 100);
 
   // Categorical attributes with respective rarities for each category
   await genesisCollectionInstance.addOptionsWithImageTrait(
+    13,
     "Arms",
     100,
     ["Pink", "Grey", "Yellow", "Red", "Blue"],
@@ -143,6 +170,7 @@ async function setupCharacterAttributes(genesisCollectionInstance) {
 
   // Categorical attributes with respective rarities for each category
   await genesisCollectionInstance.addOptionsTrait(
+    15,
     "Weapon",
     100,
     ["Sword", "Axe", "Bow", "Spear", "Wand"],
