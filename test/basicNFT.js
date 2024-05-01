@@ -34,11 +34,6 @@ describe("NFT Generator", function () {
 
     await setupCharacterAttributes(genesisCollection);
 
-    const result = await genesisCollection.generateNFT(
-      4567867867856785995002450n
-    );
-    console.log(result);
-
     return { genesisCollection, basicNFT, owner };
   }
 
@@ -46,16 +41,9 @@ describe("NFT Generator", function () {
     it("Mint token with genes 238957810045891491295781004589144500045045000450", async function () {
       const { genesisCollection, basicNFT, owner } = await deployContracts();
 
-      await basicNFT.addExample();
-      await basicNFT.addExample();
-      await basicNFT.addExample();
-
-      const result = await basicNFT.example(1);
-      console.log(result);
-
       let randomNumbers = [
-        "23895781004589149129578100458914450004567867867856785995002450",
-        // "23895781004589149112352957810045891445000456778885695045000450",
+        "23895781004589149129578100458914450004567867867856785990002450",
+        "23895781004589149129578100458914450004567867867856785990110099",
         // "23895781004589149129578167788004589144500345634564563456045045000450",
         // "238957810045891491295781004589144598900044564356346345634565045000450",
         // "238957810045891491295781004589144500057450578567986789678945000450",
@@ -77,10 +65,13 @@ describe("NFT Generator", function () {
 
         console.log(nftJSON);
 
-        const TRAITS_INDEX = 3;
+        const TRAITS_INDEX = 4;
+
+        //Trait Structure
         const TRAIT_TYPE_INDEX = 0;
         const TRAIT_KEY_INDEX = 1;
-        const TRAIT_VALUE_INDEX = 2;
+        const TRAIT_IS_DEFINED_INDEX = 2;
+        const TRAIT_VALUE_INDEX = 3;
         let nftTraits = nftJSON[TRAITS_INDEX];
         let attributes = [];
 
@@ -88,24 +79,30 @@ describe("NFT Generator", function () {
           let traitType = nftTraits[i][TRAIT_TYPE_INDEX];
           let traitKey = nftTraits[i][TRAIT_KEY_INDEX];
           let traitValue = nftTraits[i][TRAIT_VALUE_INDEX];
+          let traitDefined = nftTraits[i][TRAIT_IS_DEFINED_INDEX];
 
-          console.log(traitValue);
+          if (traitDefined) {
+            let traitLabel = await genesisCollection.getTraitLabel(traitKey);
 
-          let traitLabel = await basicNFT.getTraitLabel(traitKey);
-
-          let attribute = {
-            trait_type: traitLabel,
-            value:
-              traitType == 1
-                ? traitValue
-                : await basicNFT.getTraitOptionsLabel(traitKey, traitValue),
-            image: await genesisCollection.getTraitOptionImage(
-              traitKey,
-              traitValue
-            ),
-          };
-          attributes.push(attribute);
+            let attribute = {
+              trait_type: traitLabel,
+              value:
+                traitType == 1
+                  ? traitValue
+                  : await genesisCollection.getTraitOptionsLabel(
+                      traitKey,
+                      traitValue
+                    ),
+              image: await genesisCollection.getTraitOptionsImage(
+                traitKey,
+                traitValue
+              ),
+            };
+            attributes.push(attribute);
+          }
+          //console.log(attributes);
         }
+        console.log(attributes);
 
         // for (let i = 0; i < nftJSON.attributes.length; i++) {
         //   let attr = await basicNFT.getAttrLabel(
@@ -126,7 +123,6 @@ describe("NFT Generator", function () {
         //   };
         //   attributes.push(attribute);
         // }
-        console.log(attributes);
       }
       // expect(
       //   attributes[0].value,

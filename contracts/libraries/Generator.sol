@@ -9,6 +9,7 @@ library Generator {
 		string name;
 		uint genes;
 		uint8 genesLength;
+		uint32[] chancesGene;
 		Trait[] traits;
 	}
 
@@ -28,6 +29,7 @@ library Generator {
 
 		NFT memory result;
 		result.traits = new Trait[](numberOfTraits);
+		result.chancesGene = new uint32[](numberOfTraits);
 
 		result.genes = genes;
 		result.genesLength = NumberUtils.countDigits(genes);
@@ -36,7 +38,10 @@ library Generator {
 
 		for (uint8 i; i < numberOfTraits; i++) {
 			traitKey = myCollection.getTraitKeyByIndex(i);
+			(uint32 chancesGene, ) = getChancesGene(genes, genesIndex, result.genesLength);
 			(hasTrait, genesIndex) = performTraitChanceCheck(genes, genesIndex, myCollection.getTraitChance(traitKey), result.genesLength);
+
+			result.chancesGene[i] = chancesGene;
 			if (hasTrait) {
 				currentTraitType = myCollection.getTraitKeyType(traitKey);
 				if (currentTraitType == Collection.TraitType.Number) {
@@ -82,13 +87,21 @@ library Generator {
 		return genesIndex;
 	}
 
+	// chanceGene = 50;
+	// traitChance = 99; True
+	// chanceGene = 50;
+	// traitChance = 99; True
 	function performChanceCheck(uint32 traitChance, uint32 chancesGene) internal pure returns (bool) {
-		return chancesGene < traitChance;
+		return chancesGene <= traitChance;
 	}
+
+	// [50n, 50n, 99n, 85n ],
+	//[ 99n, 0n, 99n, 99n ],
 
 	function performTraitChanceCheck(uint256 genes, uint8 genesIndex, uint32 traitChance, uint8 genesLength) internal pure returns (bool hasTrait, uint8 newGenesIndex) {
 		uint32 chancesGene;
 		(chancesGene, newGenesIndex) = getChancesGene(genes, genesIndex, genesLength);
+
 		hasTrait = performChanceCheck(traitChance, chancesGene);
 	}
 

@@ -14,25 +14,6 @@ contract BasicNFT is ERC721, Ownable, NFTGenerator {
 		init(collectionAddress, nftRandomManagerAddress);
 	}
 
-	uint examplesIndex;
-	mapping(uint => Generator.NFT) examples;
-
-	function copy(Generator.NFT storage target, Generator.NFT memory origin) internal {
-		target.name = origin.name;
-		for (uint i = 0; i < origin.traits.length; i++) {
-			target.traits.push(Generator.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value));
-		}
-	}
-
-	function addExample() external {
-		copy(examples[examplesIndex], Generator.generateNFT(myCollection, 4567867867856785995002450));
-		examplesIndex++;
-	}
-
-	function example(uint index) external view returns (Generator.NFT memory) {
-		return examples[index];
-	}
-
 	function getTokenURI() external view returns (string memory result) {}
 
 	function setRandomManager(address nftRandomManagerAddress) external onlyOwner {

@@ -88,7 +88,7 @@ abstract contract Collection {
 		return (traitNumberMin[traitKeyId], traitNumberMax[traitKeyId]);
 	}
 
-	function getTraitOptionLabel(uint8 traitKeyId, uint8 traitId) external view returns (string memory) {
+	function getTraitOptionsLabel(uint8 traitKeyId, uint8 traitId) external view returns (string memory) {
 		return traitOptionLabels[traitKeyId][traitId];
 	}
 
@@ -96,7 +96,7 @@ abstract contract Collection {
 		return traitOptionChances[traitKeyId][traitId];
 	}
 
-	function getTraitOptionImage(uint8 traitKeyId, uint8 traitId) external view returns (string memory result) {
+	function getTraitOptionsImage(uint8 traitKeyId, uint8 traitId) external view returns (string memory result) {
 		if (traitOptionImages[traitKeyId].length == 0) {
 			result = "";
 		} else {
