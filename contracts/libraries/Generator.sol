@@ -87,16 +87,9 @@ library Generator {
 		return genesIndex;
 	}
 
-	// chanceGene = 50;
-	// traitChance = 99; True
-	// chanceGene = 50;
-	// traitChance = 99; True
 	function performChanceCheck(uint32 traitChance, uint32 chancesGene) internal pure returns (bool) {
 		return chancesGene <= traitChance;
 	}
-
-	// [50n, 50n, 99n, 85n ],
-	//[ 99n, 0n, 99n, 99n ],
 
 	function performTraitChanceCheck(uint256 genes, uint8 genesIndex, uint32 traitChance, uint8 genesLength) internal pure returns (bool hasTrait, uint8 newGenesIndex) {
 		uint32 chancesGene;

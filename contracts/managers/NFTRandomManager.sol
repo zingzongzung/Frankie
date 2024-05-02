@@ -6,12 +6,9 @@ pragma solidity ^0.8.24;
 import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./NFTGenerator.sol";
+import "../interfaces/NFTGenerator.sol";
 
 contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
-	// using Counters for Counters.Counter;
-	// using Strings for uint256;
-
 	bytes32 public constant NFT_RANDOM_MANAGER = keccak256("NFT_RANDOM_MANAGER");
 	NFTGenerator nftGenerator;
 
@@ -77,7 +74,7 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 		nftGenerator.generate(s_requests[_requestId].tokenId, _randomWords[0]);
 	}
 
-	function getRequest(uint256 _requestId) external returns (RequestStatus memory rs) {
+	function getRequest(uint256 _requestId) external view returns (RequestStatus memory rs) {
 		return s_requests[_requestId];
 	}
 

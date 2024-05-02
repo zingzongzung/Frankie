@@ -5,12 +5,9 @@ const {
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 
+//npx hardhat test ./test/basicNFT.js
 describe("NFT Generator", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
   async function deployContracts() {
-    // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount] = await ethers.getSigners();
 
     const GenesisCollection = await ethers.getContractFactory(
@@ -25,45 +22,42 @@ describe("NFT Generator", function () {
       /* VRF Subscription Id */ 5
     );
 
-    const BasicNFT = await ethers.getContractFactory("BasicNFT");
-    const basicNFT = await BasicNFT.deploy(
+    const GenesisNFT = await ethers.getContractFactory("GenesisNFT");
+    const genesisNFT = await GenesisNFT.deploy(
       owner.address,
       genesisCollection.target,
-      nftRandomManager.target
+      nftRandomManager.target,
+      "NFT Name",
+      "GGGG"
     );
 
     await setupCharacterAttributes(genesisCollection);
 
-    return { genesisCollection, basicNFT, owner };
+    return { genesisCollection, genesisNFT, owner };
   }
 
-  describe("Basic NFT", function () {
-    it("Mint token with genes 238957810045891491295781004589144500045045000450", async function () {
-      const { genesisCollection, basicNFT, owner } = await deployContracts();
+  describe("Test an instance of a Collection NFT - GenesisNFT", function () {
+    it("Mint token Using Random", async function () {
+      const { genesisCollection, genesisNFT, owner } = await deployContracts();
 
       let randomNumbers = [
         "23895781004589149129578100458914450004567867867856785990002450",
         "23895781004589149129578100458914450004567867867856785990110099",
-        // "23895781004589149129578167788004589144500345634564563456045045000450",
-        // "238957810045891491295781004589144598900044564356346345634565045000450",
-        // "238957810045891491295781004589144500057450578567986789678945000450",
-        // "238957810067845891491295781004589144500055430945045000345634563456450",
-        // "23895781004888589149129578100458914450004504500000869687900450",
-        // "238957810045891491295999781004589144500045040906785000450",
-        // "2389578100458914912957810045890978007890236894145256345643561445000450",
       ];
+
+      let nfts = [];
 
       for (let index = 0; index < randomNumbers.length; index++) {
         let randomNumber = randomNumbers[index];
-        await basicNFT.safeMintTest(
+        await genesisNFT.safeMintTest(
           owner.address,
           randomNumber,
           `Token ${index}`
         );
         let tokenId = index;
-        const nftJSON = await basicNFT.getNFTDetails(tokenId);
+        const nftJSON = await genesisNFT.getNFTDetails(tokenId);
 
-        console.log(nftJSON);
+        nfts.push({ genes: randomNumber, attributes: [] });
 
         const TRAITS_INDEX = 4;
 
@@ -73,7 +67,6 @@ describe("NFT Generator", function () {
         const TRAIT_IS_DEFINED_INDEX = 2;
         const TRAIT_VALUE_INDEX = 3;
         let nftTraits = nftJSON[TRAITS_INDEX];
-        let attributes = [];
 
         for (let i = 0; i < nftTraits.length; i++) {
           let traitType = nftTraits[i][TRAIT_TYPE_INDEX];
@@ -98,53 +91,23 @@ describe("NFT Generator", function () {
                 traitValue
               ),
             };
-            attributes.push(attribute);
+            nfts[index].attributes.push(attribute);
           }
-          //console.log(attributes);
         }
-        console.log(attributes);
-
-        // for (let i = 0; i < nftJSON.attributes.length; i++) {
-        //   let attr = await basicNFT.getAttrLabel(
-        //     tokenId,
-        //     nftJSON.attributes[i].key,
-        //     nftJSON.attributes[i].value
-        //   );
-        //   let attribute = {
-        //     trait_type: attr.atrLabel,
-        //     value:
-        //       nftJSON.attributes[i].attributeType == 1
-        //         ? attr.attrNumberValue
-        //         : attr.atrValue,
-
-        //     gene: nftJSON.attributes[i].gene,
-        //     geneRarity: nftJSON.attributes[i].rarityGene,
-        //     geneLength: nftJSON.attributes[i].geneLength,
-        //   };
-        //   attributes.push(attribute);
-        // }
       }
-      // expect(
-      //   attributes[0].value,
-      //   "Strength with gene 0450 should have yeld 46"
-      // ).to.equal(46);
+      let nftsString = JSON.stringify(
+        nfts,
+        (key, value) => (typeof value === "bigint" ? value.toString() : value) // return everything else unchanged
+      );
+
+      expect(
+        nftsString,
+        "Attributes for gene should have strenght 100 and arms blue and weapon and"
+      ).to.equal(
+        '[{"genes":"23895781004589149129578100458914450004567867867856785990002450","attributes":[{"trait_type":"Strength","value":"24","image":""},{"trait_type":"Strengtsh","value":"94","image":""},{"trait_type":"Arms","value":"Yellow","image":"<g class=\'monster-left-arm\'> <path id=\'Shape\' d=\'M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g><g class=\'monster-right-arm\'> <path id=\'Shape-2\' data-name=\'Shape\' d=\'M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g>"},{"trait_type":"Weapon","value":"Wand","image":""}]},{"genes":"23895781004589149129578100458914450004567867867856785990110099","attributes":[{"trait_type":"Strength","value":"100","image":""},{"trait_type":"Arms","value":"Blue","image":"<g class=\'monster-left-arm\'> <path id=\'Shape\' d=\'M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g><g class=\'monster-right-arm\'> <path id=\'Shape-2\' data-name=\'Shape\' d=\'M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g>"},{"trait_type":"Weapon","value":"Wand","image":""}]}]'
+      );
     });
   });
-
-  //   describe("Total tokens", function () {
-  //     it("Should have some tokens", async function () {
-  //       const { genesisCollection, basicNFT, owner } = await deployContracts();
-
-  //       await basicNFT.safeMint(
-  //         owner.address,
-  //         genesisCollection.target,
-  //         125125123451234,
-  //         `Token ${0}`
-  //       );
-  //       let count = await basicNFT.balanceOf(owner.address);
-  //       console.log(`${owner.address} has ${count} tokens`);
-  //     });
-  //   });
 });
 
 async function setupCharacterAttributes(genesisCollectionInstance) {
@@ -164,7 +127,6 @@ async function setupCharacterAttributes(genesisCollectionInstance) {
     [armsPinkSVG, armsPinkSVG, armsPinkSVG, armsPinkSVG, armsPinkSVG]
   );
 
-  // Categorical attributes with respective rarities for each category
   await genesisCollectionInstance.addOptionsTrait(
     15,
     "Weapon",
