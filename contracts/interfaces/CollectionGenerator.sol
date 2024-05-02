@@ -8,13 +8,17 @@ import "./Collection.sol";
 import "../managers/NFTRandomManager.sol";
 import "../libraries/NumberUtils.sol";
 
-abstract contract NFTGenerator is ERC721, Ownable {
+abstract contract CollectionGenerator is ERC721, Ownable {
 	using Strings for address;
 	using Strings for uint;
-	error InvalidRandomManagerAddress(address nftRandomManagerAddress);
 
-	Collection myCollection;
-	NFTRandomManager nftRandomManager;
+	//Errors
+	error InvalidRandomManagerAddress(address nftRandomManagerAddress);
+	error InvalidShopManagerAddress(address invalidShopManagerAddress);
+
+	Collection private myCollection;
+	NFTRandomManager private nftRandomManager;
+	address private shopManagerAddress;
 
 	string private tokenURIBaseURL;
 
@@ -37,24 +41,37 @@ abstract contract NFTGenerator is ERC721, Ownable {
 	}
 
 	function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
-		return string(abi.encodePacked(tokenURIBaseURL, "/", address(this).toHexString(), "/", tokenId.toString()));
+		return string(abi.encodePacked(tokenURIBaseURL, "/", address(this).toHexString(), "/", tokenId.toString(), "/", address(myCollection).toHexString()));
 	}
 
 	function setRandomManager(address nftRandomManagerAddress) external onlyOwner {
 		nftRandomManager = NFTRandomManager(nftRandomManagerAddress);
 	}
 
-	function setTokenURIBaseURL(string memory _tokenURIBaseURL) external onlyOwner {
+	function setShopManagerAddress(address _shopManagerAddress) external onlyOwner {
+		shopManagerAddress = _shopManagerAddress;
+	}
+
+	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external onlyOwner {
 		tokenURIBaseURL = _tokenURIBaseURL;
 	}
 
-	function safeMint(address to, string memory name) public onlyOwner {
+	function getCollectionAddress() external view returns (address) {
+		return address(myCollection);
+	}
+
+	/**
+	 *
+	 * @param to The mint to
+	 * @param name The name of the token
+	 */
+	function safeMint(address to, string calldata name) public onlyShopManager {
 		startRandomProcess(_nextTokenId, name);
 		_safeMint(to, _nextTokenId);
 		_nextTokenId++;
 	}
 
-	function safeMintTest(address to, uint256 randomNumber, string memory name) public onlyOwner {
+	function safeMintTest(address to, uint256 randomNumber, string memory name) public {
 		_generate(name, _nextTokenId, randomNumber);
 		_safeMint(to, _nextTokenId);
 		_nextTokenId++;
@@ -120,9 +137,19 @@ abstract contract NFTGenerator is ERC721, Ownable {
 		copy(nfts[tokenId], myCollection.generateNFT(genes));
 	}
 
+	/**
+	 * Permission Modifiers
+	 */
 	modifier onlyRandomManager() {
 		if (address(nftRandomManager) != msg.sender) {
 			revert InvalidRandomManagerAddress(msg.sender);
+		}
+		_;
+	}
+
+	modifier onlyShopManager() {
+		if (shopManagerAddress != msg.sender) {
+			revert InvalidShopManagerAddress(msg.sender);
 		}
 		_;
 	}

@@ -6,7 +6,8 @@ import "../libraries/Generator.sol";
 abstract contract Collection {
 	enum TraitType {
 		Options,
-		Number
+		Number,
+		OptionsWithImage
 	}
 
 	//This represents all the collectionTraits
@@ -48,7 +49,7 @@ abstract contract Collection {
 		string[] memory valueLabels,
 		uint8[] memory chances,
 		string[] memory images
-	) external addBaseTrait(traitKey, traitLabel, TraitType.Options, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, TraitType.OptionsWithImage, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;

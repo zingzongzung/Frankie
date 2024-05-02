@@ -46,8 +46,8 @@ library Generator {
 				currentTraitType = myCollection.getTraitKeyType(traitKey);
 				if (currentTraitType == Collection.TraitType.Number) {
 					genesIndex = generateNumberTrait(myCollection, genesIndex, traitKey, result, i);
-				} else if (currentTraitType == Collection.TraitType.Options) {
-					genesIndex = generateOptionsTrait(myCollection, genesIndex, traitKey, result, i);
+				} else if (currentTraitType == Collection.TraitType.Options || currentTraitType == Collection.TraitType.OptionsWithImage) {
+					genesIndex = generateOptionsTrait(myCollection, genesIndex, traitKey, result, i, currentTraitType);
 				}
 			}
 		}
@@ -68,7 +68,14 @@ library Generator {
 		return genesIndex;
 	}
 
-	function generateOptionsTrait(Collection myCollection, uint8 genesIndex, uint8 attrKey, NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
+	function generateOptionsTrait(
+		Collection myCollection,
+		uint8 genesIndex,
+		uint8 attrKey,
+		NFT memory myNft,
+		uint8 nftTraitIndex,
+		Collection.TraitType traitType
+	) internal view returns (uint8) {
 		uint32 chancesGene;
 		(chancesGene, genesIndex) = getChancesGene(myNft.genes, genesIndex, myNft.genesLength);
 
@@ -79,7 +86,7 @@ library Generator {
 		for (uint8 traitIndex; traitIndex < traitsLength; traitIndex++) {
 			currentChance = currentChance + myCollection.getTraitOptionChance(attrKey, traitIndex);
 			if (performChanceCheck(currentChance, chancesGene)) {
-				myNft.traits[nftTraitIndex] = Trait(Collection.TraitType.Options, attrKey, true, traitIndex);
+				myNft.traits[nftTraitIndex] = Trait(traitType, attrKey, true, traitIndex);
 				break;
 			}
 		}

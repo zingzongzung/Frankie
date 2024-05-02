@@ -31,12 +31,27 @@ describe("NFT Generator", function () {
       "GGGG"
     );
 
+    const NFTManager = await ethers.getContractFactory("NFTManager");
+    const nFTManager = await NFTManager.deploy(owner.address);
+
+    await nFTManager.addManagedCollection(genesisNFT.target);
+    await genesisNFT.setShopManagerAddress(nFTManager.target);
+
     await setupCharacterAttributes(genesisCollection);
 
-    return { genesisCollection, genesisNFT, owner };
+    return { genesisCollection, genesisNFT, owner, nFTManager };
   }
 
   describe("Test an instance of a Collection NFT - GenesisNFT", function () {
+    it("Shop ", async function () {
+      const { genesisCollection, genesisNFT, owner, nFTManager } =
+        await deployContracts();
+
+      await nFTManager._mintNFT(genesisNFT.target, `Token `, {
+        value: ethers.parseEther("0.0000000000000001"),
+      });
+    });
+
     it("Mint token Using Random", async function () {
       const { genesisCollection, genesisNFT, owner } = await deployContracts();
 
