@@ -73,12 +73,6 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 		_nextTokenId++;
 	}
 
-	function DEPRECATED_safeMintTest_(address to, uint256 randomNumber, string memory name) public {
-		_generate(name, _nextTokenId, randomNumber);
-		_safeMint(to, _nextTokenId);
-		_nextTokenId++;
-	}
-
 	/**
 	 * Helper function to copy data from memory to the contract storage.
 	 *
