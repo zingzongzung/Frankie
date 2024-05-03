@@ -10,7 +10,8 @@ contract GenesisNFT is CollectionGenerator {
 		address initialOwner,
 		address collectionAddress,
 		address nftRandomManagerAddress,
+		string memory _tokenUri,
 		string memory name,
 		string memory symbol
-	) CollectionGenerator(initialOwner, collectionAddress, nftRandomManagerAddress, name, symbol) {}
+	) CollectionGenerator(initialOwner, collectionAddress, nftRandomManagerAddress, _tokenUri, name, symbol) {}
 }

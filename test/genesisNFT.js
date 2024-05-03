@@ -1,8 +1,4 @@
-const {
-  time,
-  loadFixture,
-} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
+const {} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 
 //npx hardhat test ./test/basicNFT.js
@@ -10,121 +6,111 @@ describe("NFT Generator", function () {
   async function deployContracts() {
     const [owner, otherAccount] = await ethers.getSigners();
 
-    const GenesisCollection = await ethers.getContractFactory(
-      "GenesisCollection"
-    );
-    const genesisCollection = await GenesisCollection.deploy();
+    const NFT_RANDOM_MANAGER_ROLE =
+      "0xba97d1e7c7cac970a86143e4a79d94ccf81090bb6c8dfb9571552cb2226d115c";
+
+    /** The following deploys should be made only once */
+    //Deploy Mock Coordinator, this will help us simulate a call to the VRF Chainlink
+    //Use this address instead when instantiating the random manager
+    const MockCoordinator = await ethers.getContractFactory("MockCoordinator");
+    const mockCoordinator = await MockCoordinator.deploy();
 
     const NFTRandomManager = await ethers.getContractFactory(
       "NFTRandomManager"
     );
     const nftRandomManager = await NFTRandomManager.deploy(
-      /* VRF Subscription Id */ 5
+      /* VRF Subscription Id */ 5,
+      mockCoordinator.target,
+      "0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61" //Key Hash
     );
 
+    //Deploy the nft manager, it will be responsible to know which collections were created and to "shop"
+    const NFTManager = await ethers.getContractFactory("NFTManager");
+    const nFTManager = await NFTManager.deploy(owner.address);
+
+    /** The following deploys should be made everytime a new collection is created */
+    //Deploy the collection
+    const GenesisCollection = await ethers.getContractFactory(
+      "GenesisCollection"
+    );
+    const genesisCollection = await GenesisCollection.deploy();
+
+    //Deploy the NFT
     const GenesisNFT = await ethers.getContractFactory("GenesisNFT");
     const genesisNFT = await GenesisNFT.deploy(
       owner.address,
       genesisCollection.target,
       nftRandomManager.target,
+      "localhost",
       "NFT Name",
       "GGGG"
     );
 
-    const NFTManager = await ethers.getContractFactory("NFTManager");
-    const nFTManager = await NFTManager.deploy(owner.address);
+    //Give our newly deployed nft permissions to call nft random manager
+    await nftRandomManager.grantRole(
+      NFT_RANDOM_MANAGER_ROLE,
+      genesisNFT.target
+    );
 
+    //Add the collection to the list of managed collections on our nft manager
     await nFTManager.addManagedCollection(genesisNFT.target);
+
+    //Specify on our newly deployed nft who can mint
     await genesisNFT.setShopManagerAddress(nFTManager.target);
 
+    //Initialize genesis Colection traits
     await setupCharacterAttributes(genesisCollection);
 
-    return { genesisCollection, genesisNFT, owner, nFTManager };
+    return {
+      genesisCollection,
+      genesisNFT,
+      owner,
+      nFTManager,
+      mockCoordinator,
+      nftRandomManager,
+    };
   }
 
   describe("Test an instance of a Collection NFT - GenesisNFT", function () {
-    it("Shop ", async function () {
-      const { genesisCollection, genesisNFT, owner, nFTManager } =
-        await deployContracts();
+    it("Shop and get item with genes 23895781004589149129578100458914450004567867867856785990002450", async function () {
+      const {
+        genesisCollection,
+        genesisNFT,
+        owner,
+        nFTManager,
+        mockCoordinator,
+        nftRandomManager,
+      } = await deployContracts();
 
-      await nFTManager._mintNFT(genesisNFT.target, `Token `, {
+      await nFTManager.mintNFT(genesisNFT.target, `Token `, {
         value: ethers.parseEther("0.0000000000000001"),
       });
-    });
 
-    it("Mint token Using Random", async function () {
-      const { genesisCollection, genesisNFT, owner } = await deployContracts();
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [23895781004589149129578100458914450004567867867856785990002450n]
+      );
 
-      let randomNumbers = [
-        "23895781004589149129578100458914450004567867867856785990002450",
-        "23895781004589149129578100458914450004567867867856785990110099",
-      ];
-
-      let nfts = [];
-
-      for (let index = 0; index < randomNumbers.length; index++) {
-        let randomNumber = randomNumbers[index];
-        await genesisNFT.safeMintTest(
-          owner.address,
-          randomNumber,
-          `Token ${index}`
-        );
-        let tokenId = index;
-        const nftJSON = await genesisNFT.getNFTDetails(tokenId);
-
-        nfts.push({ genes: randomNumber, attributes: [] });
-
-        const TRAITS_INDEX = 4;
-
-        //Trait Structure
-        const TRAIT_TYPE_INDEX = 0;
-        const TRAIT_KEY_INDEX = 1;
-        const TRAIT_IS_DEFINED_INDEX = 2;
-        const TRAIT_VALUE_INDEX = 3;
-        let nftTraits = nftJSON[TRAITS_INDEX];
-
-        for (let i = 0; i < nftTraits.length; i++) {
-          let traitType = nftTraits[i][TRAIT_TYPE_INDEX];
-          let traitKey = nftTraits[i][TRAIT_KEY_INDEX];
-          let traitValue = nftTraits[i][TRAIT_VALUE_INDEX];
-          let traitDefined = nftTraits[i][TRAIT_IS_DEFINED_INDEX];
-
-          if (traitDefined) {
-            let traitLabel = await genesisCollection.getTraitLabel(traitKey);
-
-            let attribute = {
-              trait_type: traitLabel,
-              value:
-                traitType == 1
-                  ? traitValue
-                  : await genesisCollection.getTraitOptionsLabel(
-                      traitKey,
-                      traitValue
-                    ),
-              image: await genesisCollection.getTraitOptionsImage(
-                traitKey,
-                traitValue
-              ),
-            };
-            nfts[index].attributes.push(attribute);
-          }
-        }
-      }
-      let nftsString = JSON.stringify(
-        nfts,
-        (key, value) => (typeof value === "bigint" ? value.toString() : value) // return everything else unchanged
+      const nftJSON = await genesisNFT.getNFTDetails(0);
+      const nftJSONString = JSON.stringify(nftJSON, (key, value) =>
+        typeof value === "bigint" ? value.toString() : value
       );
 
       expect(
-        nftsString,
+        nftJSONString,
         "Attributes for gene should have strenght 100 and arms blue and weapon and"
       ).to.equal(
-        '[{"genes":"23895781004589149129578100458914450004567867867856785990002450","attributes":[{"trait_type":"Strength","value":"24","image":""},{"trait_type":"Strengtsh","value":"94","image":""},{"trait_type":"Arms","value":"Yellow","image":"<g class=\'monster-left-arm\'> <path id=\'Shape\' d=\'M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g><g class=\'monster-right-arm\'> <path id=\'Shape-2\' data-name=\'Shape\' d=\'M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g>"},{"trait_type":"Weapon","value":"Wand","image":""}]},{"genes":"23895781004589149129578100458914450004567867867856785990110099","attributes":[{"trait_type":"Strength","value":"100","image":""},{"trait_type":"Arms","value":"Blue","image":"<g class=\'monster-left-arm\'> <path id=\'Shape\' d=\'M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g><g class=\'monster-right-arm\'> <path id=\'Shape-2\' data-name=\'Shape\' d=\'M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g>"},{"trait_type":"Weapon","value":"Wand","image":""}]}]'
+        '["","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
       );
     });
   });
 });
 
+/**
+ *
+ * Define collection traits
+ *
+ */
 async function setupCharacterAttributes(genesisCollectionInstance) {
   let armsPinkSVG =
     "<g class='monster-left-arm'> <path id='Shape' d='M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z' transform='translate(-114.73)' style='fill: #df4d60' /></g><g class='monster-right-arm'> <path id='Shape-2' data-name='Shape' d='M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z' transform='translate(-114.73)' style='fill: #df4d60' /></g>";

@@ -29,9 +29,11 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 		address initialOwner,
 		address collectionAddress,
 		address nftRandomManagerAddress,
+		string memory _tokenURI,
 		string memory name,
 		string memory symbol
 	) ERC721(name, symbol) Ownable(initialOwner) {
+		tokenURIBaseURL = _tokenURI;
 		myCollection = Collection(collectionAddress);
 		nftRandomManager = NFTRandomManager(nftRandomManagerAddress);
 	}
@@ -71,7 +73,7 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 		_nextTokenId++;
 	}
 
-	function safeMintTest(address to, uint256 randomNumber, string memory name) public {
+	function DEPRECATED_safeMintTest_(address to, uint256 randomNumber, string memory name) public {
 		_generate(name, _nextTokenId, randomNumber);
 		_safeMint(to, _nextTokenId);
 		_nextTokenId++;

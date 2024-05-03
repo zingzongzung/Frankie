@@ -11,20 +11,24 @@ contract NFTManager is Ownable, ReentrancyGuard {
 	address[] managedCollectionGenerators;
 	mapping(address => uint8) managedCollectionGeneratorsIndex;
 
-	constructor(address owner) Ownable(owner) {}
+	address _owner;
+
+	constructor(address owner) Ownable(owner) {
+		_owner;
+	}
+
+	uint lastReceivedAmount;
+
+	function getLastReceivedAmount() external view returns (uint) {
+		return lastReceivedAmount;
+	}
 
 	function mintNFT(address nftCollectionAddress, string calldata nftName) public payable virtual {
-		require(msg.value >= 100000, "Not enough funds sent!");
+		//require(msg.value >= 100000, "Not enough funds sent!");
+		lastReceivedAmount = msg.value;
 		require(managedCollectionGeneratorsIndex[nftCollectionAddress] == 1, "This collection was not authorized");
 		CollectionGenerator generator = CollectionGenerator(nftCollectionAddress);
 		generator.safeMint(msg.sender, nftName);
-	}
-
-	function _mintNFT(address nftCollectionAddress, string calldata nftName) public payable virtual {
-		require(msg.value >= 100000, "Not enough funds sent!");
-		require(managedCollectionGeneratorsIndex[nftCollectionAddress] == 1, "This collection was not authorized");
-		CollectionGenerator generator = CollectionGenerator(nftCollectionAddress);
-		generator.safeMintTest(msg.sender, 1456464616, nftName);
 	}
 
 	function addManagedCollection(address nftCollectionAddress) external onlyOwner {
@@ -34,5 +38,9 @@ contract NFTManager is Ownable, ReentrancyGuard {
 
 	function getManagedCollections() external view returns (address[] memory) {
 		return managedCollectionGenerators;
+	}
+
+	function withdraw() external onlyOwner {
+		payable(_owner).transfer(address(this).balance);
 	}
 }

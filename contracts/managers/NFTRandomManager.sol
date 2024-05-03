@@ -28,31 +28,23 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 	// Fuji coordinator
 	// https://docs.chain.link/docs/vrf/v2/subscription/supported-networks/
 	VRFCoordinatorV2Interface COORDINATOR;
-	address vrfCoordinator = 0x2eD832Ba664535e5886b75D64C46EB9a228C2610;
-	bytes32 keyHash = 0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61;
+	//address vrfCoordinator; Fuji = 0x2eD832Ba664535e5886b75D64C46EB9a228C2610;
+	bytes32 keyHash; // Fuji = = 0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61;
 	uint32 callbackGasLimit = 2500000;
 	uint16 requestConfirmations = 3;
 	uint32 numWords = 1;
 
 	// past requests Ids.
 	uint256[] public requestIds;
-	uint256 public lastRequestId;
-	uint256[] public lastRandomWords;
 
 	// Your subscription ID.
 	uint64 public s_subscriptionId;
 
-	constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
+	constructor(uint64 subscriptionId, address vrfCoordinatorAddress, bytes32 _keyHash) VRFConsumerBaseV2(vrfCoordinatorAddress) {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-		COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
+		COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinatorAddress);
 		s_subscriptionId = subscriptionId;
-		safeMint(msg.sender, 0);
-	}
-
-	function safeMint(address to, uint256 charId) public {}
-
-	function getNFTRandomManagerRole() external pure returns (bytes32) {
-		return NFT_RANDOM_MANAGER;
+		keyHash = _keyHash;
 	}
 
 	function requestRandomWords(address requestor, uint256 tokenId) external onlyRole(NFT_RANDOM_MANAGER) returns (uint256 requestId) {
@@ -60,7 +52,6 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 		requestId = COORDINATOR.requestRandomWords(keyHash, s_subscriptionId, requestConfirmations, callbackGasLimit, numWords);
 		s_requests[requestId] = RequestStatus({randomWords: new uint256[](0), exists: true, fulfilled: false, requestor: requestor, tokenId: tokenId});
 		requestIds.push(requestId);
-		lastRequestId = requestId;
 		emit RequestSent(requestId, numWords);
 
 		return requestId;
