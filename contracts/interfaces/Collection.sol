@@ -4,6 +4,12 @@ pragma solidity ^0.8.24;
 import "../libraries/Generator.sol";
 
 abstract contract Collection {
+	//Collection attributes
+	uint256 private collectionPrice;
+	uint16 private svgBoxHeight;
+	uint16 private svgBoxWidth;
+
+	//Traits
 	enum TraitType {
 		Options,
 		Number,
@@ -28,6 +34,16 @@ abstract contract Collection {
 	//Indexing
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
+
+	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
+		collectionPrice = _collectionPrice;
+		svgBoxHeight = _svgBoxHeight;
+		svgBoxWidth = _svgBoxWidth;
+	}
+
+	function getCollectionAttributes() external view returns (uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) {
+		return (collectionPrice, svgBoxHeight, svgBoxWidth);
+	}
 
 	function addOptionsTrait(
 		uint8 traitKey,

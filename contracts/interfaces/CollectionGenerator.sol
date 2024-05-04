@@ -3,18 +3,18 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Collection.sol";
 import "../managers/NFTRandomManager.sol";
 import "../libraries/NumberUtils.sol";
 
-abstract contract CollectionGenerator is ERC721, Ownable {
+abstract contract CollectionGenerator is AccessControl, ERC721 {
 	using Strings for address;
 	using Strings for uint;
 
-	//Errors
-	error InvalidRandomManagerAddress(address nftRandomManagerAddress);
-	error InvalidShopManagerAddress(address invalidShopManagerAddress);
+	//Roles
+	bytes32 public constant NFT_RANDOM_MANAGER = keccak256("NFT_RANDOM_MANAGER");
+	bytes32 public constant NFT_SHOP_MANAGER = keccak256("NFT_SHOP_MANAGER");
 
 	Collection private myCollection;
 	NFTRandomManager private nftRandomManager;
@@ -25,14 +25,8 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 	mapping(uint => Generator.NFT) nfts;
 	uint public _nextTokenId;
 
-	constructor(
-		address initialOwner,
-		address collectionAddress,
-		address nftRandomManagerAddress,
-		string memory _tokenURI,
-		string memory name,
-		string memory symbol
-	) ERC721(name, symbol) Ownable(initialOwner) {
+	constructor(address collectionAddress, address nftRandomManagerAddress, string memory _tokenURI, string memory name, string memory symbol) ERC721(name, symbol) {
+		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		tokenURIBaseURL = _tokenURI;
 		myCollection = Collection(collectionAddress);
 		nftRandomManager = NFTRandomManager(nftRandomManagerAddress);
@@ -46,15 +40,7 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 		return string(abi.encodePacked(tokenURIBaseURL, "/", address(this).toHexString(), "/", tokenId.toString(), "/", address(myCollection).toHexString()));
 	}
 
-	function setRandomManager(address nftRandomManagerAddress) external onlyOwner {
-		nftRandomManager = NFTRandomManager(nftRandomManagerAddress);
-	}
-
-	function setShopManagerAddress(address _shopManagerAddress) external onlyOwner {
-		shopManagerAddress = _shopManagerAddress;
-	}
-
-	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external onlyOwner {
+	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external onlyRole(DEFAULT_ADMIN_ROLE) {
 		tokenURIBaseURL = _tokenURIBaseURL;
 	}
 
@@ -67,45 +53,10 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 	 * @param to The mint to
 	 * @param name The name of the token
 	 */
-	function safeMint(address to, string calldata name) public onlyShopManager {
+	function safeMint(address to, string calldata name) public onlyRole(NFT_SHOP_MANAGER) {
 		startRandomProcess(_nextTokenId, name);
 		_safeMint(to, _nextTokenId);
 		_nextTokenId++;
-	}
-
-	/**
-	 * Helper function to copy data from memory to the contract storage.
-	 *
-	 * @param target The NFT target in storage
-	 * @param origin The NFT origin from memory
-	 */
-	function copy(Generator.NFT storage target, Generator.NFT memory origin) internal {
-		target.name = origin.name;
-		target.genes = origin.genes;
-		for (uint i = 0; i < origin.traits.length; i++) {
-			target.traits.push(Generator.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value));
-		}
-
-		//To remove
-		for (uint i = 0; i < origin.traits.length; i++) {
-			target.chancesGene.push(origin.chancesGene[i]);
-		}
-	}
-
-	/**
-	 *
-	 * Hellper function to help with the tests
-	 * TODO to be removed once the project is stabilized
-	 *
-	 * @param name Name of the token
-	 * @param tokenId Token id
-	 * @param genes (Not so much) Random number
-	 */
-	function _generate(string memory name, uint256 tokenId, uint genes) internal {
-		Generator.NFT storage myNft = nfts[tokenId];
-		myNft.name = name;
-
-		copy(nfts[tokenId], myCollection.generateNFT(genes));
 	}
 
 	/**
@@ -129,24 +80,29 @@ abstract contract CollectionGenerator is ERC721, Ownable {
 	 * @param tokenId The token id for which a random number was requested
 	 * @param genes The random number which represent the genes that will be used to determine the traits that will be given to the new nft
 	 */
-	function generate(uint tokenId, uint genes) external onlyRandomManager {
+	function generate(uint tokenId, uint genes) external onlyRole(NFT_RANDOM_MANAGER) {
 		copy(nfts[tokenId], myCollection.generateNFT(genes));
 	}
 
 	/**
-	 * Permission Modifiers
+	 * Helper function to copy data from memory to the contract storage.
+	 *
+	 * @param target The NFT target in storage
+	 * @param origin The NFT origin from memory
 	 */
-	modifier onlyRandomManager() {
-		if (address(nftRandomManager) != msg.sender) {
-			revert InvalidRandomManagerAddress(msg.sender);
+	function copy(Generator.NFT storage target, Generator.NFT memory origin) internal {
+		target.genes = origin.genes;
+		for (uint i = 0; i < origin.traits.length; i++) {
+			target.traits.push(Generator.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value));
 		}
-		_;
+
+		//To remove
+		for (uint i = 0; i < origin.traits.length; i++) {
+			target.chancesGene.push(origin.chancesGene[i]);
+		}
 	}
 
-	modifier onlyShopManager() {
-		if (shopManagerAddress != msg.sender) {
-			revert InvalidShopManagerAddress(msg.sender);
-		}
-		_;
+	function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
+		return super.supportsInterface(interfaceId);
 	}
 }

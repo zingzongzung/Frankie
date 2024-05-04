@@ -1,0 +1,14 @@
+{
+  "vrf": {
+    "subId": 2802,
+    "coordinatorAddress": "0x2eD832Ba664535e5886b75D64C46EB9a228C2610",
+    "coordinatorKey": "0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61"
+  },
+  "priceFeed": {
+    "AvaxUSD": "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"
+  },
+  "roles": {
+    "randomManager": "0xba97d1e7c7cac970a86143e4a79d94ccf81090bb6c8dfb9571552cb2226d115c",
+    "shopManager": "0x5aabe1cd6d23a4f60b1542d0ac06d171c106a8feb324d268ae7aaf2fbabd1366"
+  }
+}

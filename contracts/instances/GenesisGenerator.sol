@@ -5,13 +5,12 @@ import "./GenesisCollection.sol";
 import "../interfaces/CollectionGenerator.sol";
 import "../libraries/Generator.sol";
 
-contract GenesisNFT is CollectionGenerator {
+contract GenesisGenerator is CollectionGenerator {
 	constructor(
-		address initialOwner,
 		address collectionAddress,
 		address nftRandomManagerAddress,
 		string memory _tokenUri,
 		string memory name,
 		string memory symbol
-	) CollectionGenerator(initialOwner, collectionAddress, nftRandomManagerAddress, _tokenUri, name, symbol) {}
+	) CollectionGenerator(collectionAddress, nftRandomManagerAddress, _tokenUri, name, symbol) {}
 }
