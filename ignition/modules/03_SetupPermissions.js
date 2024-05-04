@@ -2,7 +2,7 @@ const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 const { roles } = require("./XX_DeployConfig.json");
 const deployCollection = require("./02_DeployCollection.js");
 
-//npx hardhat ignition deploy ignition/modules/99_SetupPermissions.js --network fuji  --reset
+//npx hardhat ignition deploy ignition/modules/03_SetupPermissions.js --network fuji  --reset
 module.exports = buildModule("SetupPermissions", (m) => {
   const { nftRandomManager, nftManager, genesisGenerator } =
     m.useModule(deployCollection);
@@ -26,5 +26,5 @@ module.exports = buildModule("SetupPermissions", (m) => {
   m.call(genesisGenerator, "grantRole", [roles.shopManager, nftManager], {
     id: "grantRole_2",
   });
-  // return { nftRandomManager, nftManager, genesisGenerator };
+  return { nftRandomManager, nftManager, genesisGenerator };
 });
