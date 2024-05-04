@@ -17,8 +17,8 @@ contract ShopManager is NFTManager {
 	function mintNFT(
 		address nftCollectionAddress,
 		string calldata nftName
-	) public payable override onlyAuthorizedCollections(nftCollectionAddress) onlyEnoughFundsSent(nftCollectionAddress, msg.value) {
-		super.mintNFT(nftCollectionAddress, nftName);
+	) public payable onlyAuthorizedCollections(nftCollectionAddress) onlyEnoughFundsSent(nftCollectionAddress, msg.value) {
+		_mintNFT(nftCollectionAddress, nftName);
 	}
 
 	function usdToAvaxToken(uint256 collectionPriceInUSD) public view returns (uint256) {

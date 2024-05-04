@@ -17,7 +17,7 @@ abstract contract NFTManager is INFTManager, AccessControl, ReentrancyGuard {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 	}
 
-	function mintNFT(address nftCollectionAddress, string calldata nftName) public payable virtual onlyAuthorizedCollections(nftCollectionAddress) {
+	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal onlyAuthorizedCollections(nftCollectionAddress) {
 		ICollectionGenerator generator = ICollectionGenerator(nftCollectionAddress);
 
 		generator.safeMint(msg.sender, nftName);

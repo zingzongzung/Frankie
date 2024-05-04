@@ -41,6 +41,10 @@ describe("NFT collectionGenerator", function () {
     const Collection = await ethers.getContractFactory("Collection");
     const collection = await Collection.deploy();
 
+    //Deploy the game manager,
+    const GameManager = await ethers.getContractFactory("GameManager");
+    const gameManager = await GameManager.deploy();
+
     //Deploy the NFT
     const CollectionGenerator = await ethers.getContractFactory(
       "CollectionGenerator"
@@ -70,6 +74,7 @@ describe("NFT collectionGenerator", function () {
 
     //Add the collection to the list of managed collections on our nft manager
     await shopManager.addManagedCollection(collectionGenerator.target);
+    await gameManager.addManagedCollection(collectionGenerator.target);
 
     //Initialize genesis Colection traits
     await setupCharacterAttributes(collection);
@@ -81,6 +86,7 @@ describe("NFT collectionGenerator", function () {
       shopManager,
       mockCoordinator,
       nftRandomManager,
+      gameManager,
     };
   }
 
@@ -93,6 +99,7 @@ describe("NFT collectionGenerator", function () {
         shopManager,
         mockCoordinator,
         nftRandomManager,
+        gameManager,
       } = await deployContracts();
 
       const result = await shopManager.getCollectionPrice(
@@ -113,7 +120,11 @@ describe("NFT collectionGenerator", function () {
       const nftJSONString = JSON.stringify(nftJSON, (key, value) =>
         typeof value === "bigint" ? value.toString() : value
       );
-      999471054260n;
+
+      let teste = await gameManager.rerollAttribute(collectionGenerator, 0, 11);
+      console.log(teste);
+      teste = await gameManager.rerollAttribute(collectionGenerator, 0, 13);
+      console.log(teste);
 
       expect(
         nftJSONString,
