@@ -1,25 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../interfaces/ICollection.sol";
+import "../libraries/Types.sol";
 import "../libraries/Generator.sol";
 
-abstract contract Collection {
+contract Collection is ICollection {
 	//Collection attributes
 	uint256 private collectionPrice;
 	uint16 private svgBoxHeight;
 	uint16 private svgBoxWidth;
 
-	//Traits
-	enum TraitType {
-		Options,
-		Number,
-		OptionsWithImage
-	}
-
 	//This represents all the collectionTraits
 	uint8 traitsLength;
 	mapping(uint8 => string) traitLabels;
-	mapping(uint8 => TraitType) atributeTypes;
+	mapping(uint8 => Types.TraitType) atributeTypes;
 	mapping(uint8 => uint8) traitChances; //Percentage between 0 and 99
 
 	//Array Types
@@ -51,7 +46,7 @@ abstract contract Collection {
 		uint8 traitChance,
 		string[] memory valueLabels,
 		uint8[] memory chances
-	) external addBaseTrait(traitKey, traitLabel, TraitType.Options, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.Options, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;
@@ -65,7 +60,7 @@ abstract contract Collection {
 		string[] memory valueLabels,
 		uint8[] memory chances,
 		string[] memory images
-	) external addBaseTrait(traitKey, traitLabel, TraitType.OptionsWithImage, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.OptionsWithImage, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;
@@ -79,7 +74,7 @@ abstract contract Collection {
 		uint8 traitChance,
 		uint8 min,
 		uint8 max
-	) external addBaseTrait(traitKey, traitLabel, TraitType.Number, traitChance) {
+	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.Number, traitChance) {
 		require(min <= max, "Min should be less than max");
 		traitNumberMin[traitKey] = min;
 		traitNumberMax[traitKey] = max;
@@ -88,7 +83,7 @@ abstract contract Collection {
 	modifier addBaseTrait(
 		uint8 traitKey,
 		string memory traitLabel,
-		TraitType traitType,
+		Types.TraitType traitType,
 		uint8 traitChance
 	) {
 		require(traitChance > 0 && traitChance <= 100, "Chance must be a positive number less than 100");
@@ -133,7 +128,7 @@ abstract contract Collection {
 		return traitLabels[traitKeyId];
 	}
 
-	function getTraitKeyType(uint8 traitKeyId) external view returns (TraitType) {
+	function getTraitKeyType(uint8 traitKeyId) external view returns (Types.TraitType) {
 		return atributeTypes[traitKeyId];
 	}
 
@@ -145,8 +140,8 @@ abstract contract Collection {
 		return traitKeysByIndex[traitIndex];
 	}
 
-	function generateNFT(uint genes) external view returns (Generator.NFT memory) {
-		return Generator.generateNFT(Collection(this), genes);
+	function generateNFT(uint genes) external view returns (Types.NFT memory) {
+		return Generator.generateNFT(this, genes);
 	}
 
 	function getTraitKeyByName(string memory traitName) external view returns (uint8) {

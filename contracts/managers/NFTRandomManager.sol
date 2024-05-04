@@ -6,11 +6,11 @@ pragma solidity ^0.8.24;
 import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../interfaces/CollectionGenerator.sol";
+import "../interfaces/ICollectionGenerator.sol";
 
 contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 	bytes32 public constant NFT_RANDOM_MANAGER = keccak256("NFT_RANDOM_MANAGER");
-	CollectionGenerator nftGenerator;
+	ICollectionGenerator nftGenerator;
 
 	// VRF
 	event RequestSent(uint256 requestId, uint32 numWords);
@@ -61,7 +61,7 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 		require(s_requests[_requestId].exists, "request not found");
 		s_requests[_requestId].fulfilled = true;
 		s_requests[_requestId].randomWords = _randomWords;
-		nftGenerator = CollectionGenerator(s_requests[_requestId].requestor);
+		nftGenerator = ICollectionGenerator(s_requests[_requestId].requestor);
 		nftGenerator.generate(s_requests[_requestId].tokenId, _randomWords[0]);
 	}
 
