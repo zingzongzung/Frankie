@@ -68,21 +68,15 @@ describe("NFT collectionNFT", function () {
     await nftRandomManager.grantRole(NFT_RANDOM_MANAGER_ROLE, passNFT.target);
     await passNFT.grantRole(NFT_RANDOM_MANAGER_ROLE, nftRandomManager.target);
 
-    //mint a pass for this user
-    await passManager.mintNFT(passNFT.target, "Pass 1");
+    //Mint a pass for otherAccount
+    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 1");
 
-    //For now we will generate a guid that will be sent both to the pass manager and to the server
-    //In the future lets use the hash of the collection that the user is looking to
-    //And then use it to verify the collection integrity in the end
-    // Define a message
-    let originalMessage = "Hello world";
-    let signature = await owner.signMessage(originalMessage);
+    //Mint a pass for owner
+    await passManager.mintNFT(passNFT.target, "Pass 2");
 
-    console.log(signature);
-    let signer = await passManager.testeGetSigner(originalMessage, signature);
-
-    console.log(owner.address);
-    console.log(signer);
+    const TEST_MESSAGE = "Example";
+    const signature = await owner.signMessage(TEST_MESSAGE);
+    const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
 
     //Deploy the collection
     const CollectionConfigFactory = await ethers.getContractFactory(
@@ -91,8 +85,8 @@ describe("NFT collectionNFT", function () {
     const collection = await CollectionConfigFactory.deploy(
       passManager.target,
       passNFT.target,
-      0,
-      originalMessage,
+      1,
+      hashedSignature,
       signature
     );
 
@@ -137,10 +131,35 @@ describe("NFT collectionNFT", function () {
       mockCoordinator,
       nftRandomManager,
       gameManager,
+      passManager,
     };
   }
 
   describe("Test Forge", function () {
+    it("signs a message on client and gets the signer on the server", async function () {
+      const {
+        collection,
+        collectionNFT,
+        owner,
+        shopManager,
+        mockCoordinator,
+        nftRandomManager,
+        gameManager,
+        passManager,
+      } = await deployContracts();
+
+      const SignerTest = await ethers.getContractFactory("SignerTest");
+      const signerTest = await SignerTest.deploy();
+
+      const TEST_MESSAGE = "Example";
+
+      const signature = await owner.signMessage(TEST_MESSAGE);
+      const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
+
+      const result = await signerTest.recoverSigner(hashedSignature, signature);
+
+      expect(owner.address, "Signatures dont match ").to.equal(result);
+    });
     it("Shop/mint  an item that costs more than 0", async function () {
       const {
         collection,
