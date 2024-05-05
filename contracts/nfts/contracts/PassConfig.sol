@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../interfaces/ICollection.sol";
-import "../libraries/Types.sol";
-import "../libraries/Generator.sol";
+import "../interfaces/ICollectionConfig.sol";
+import "../../libraries/Generator.sol";
+import "../../managers/nfts/PassManager.sol";
 
-contract Collection is ICollection {
+contract PassConfig is ICollectionConfig {
 	//Collection attributes
 	uint256 private collectionPrice;
 	uint16 private svgBoxHeight;

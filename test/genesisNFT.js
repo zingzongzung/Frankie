@@ -1,12 +1,13 @@
 const {} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
 //npx hardhat test ./test/genesisNFT.js
-describe("NFT collectionGenerator", function () {
+describe("NFT collectionNFT", function () {
   async function deployContracts() {
     const [owner, otherAccount] = await ethers.getSigners();
 
-    // console.log(await collectionGenerator.NFT_MANAGER());
+    //console.log(await collectionNFT.NFT_MANAGER());
     const NFT_RANDOM_MANAGER_ROLE =
       "0xba97d1e7c7cac970a86143e4a79d94ccf81090bb6c8dfb9571552cb2226d115c";
 
@@ -36,20 +37,70 @@ describe("NFT collectionGenerator", function () {
     const ShopManager = await ethers.getContractFactory("ShopManager");
     const shopManager = await ShopManager.deploy(mockAggregatorAVAX_USD.target);
 
-    /** The following deploys should be made everytime a new collection is created */
-    //Deploy the collection
-    const Collection = await ethers.getContractFactory("Collection");
-    const collection = await Collection.deploy();
+    //Deploy the pass configuration,
+    const PassConfigFactory = await ethers.getContractFactory("PassConfig");
+    const passConfig = await PassConfigFactory.deploy();
 
     //Deploy the game manager,
     const GameManager = await ethers.getContractFactory("GameManager");
     const gameManager = await GameManager.deploy();
 
+    //Deploy the pass manager,
+    const PassManager = await ethers.getContractFactory("PassManager");
+    const passManager = await PassManager.deploy(mockAggregatorAVAX_USD.target);
+
+    //Prepare a Pass and mint one for the user
     //Deploy the NFT
-    const CollectionGenerator = await ethers.getContractFactory(
-      "CollectionGenerator"
+    const PassNFTFactory = await ethers.getContractFactory("CollectionNFT");
+    const passNFT = await PassNFTFactory.deploy(
+      passConfig.target,
+      nftRandomManager.target,
+      "localhost",
+      "Pass NFT",
+      "Pass"
     );
-    const collectionGenerator = await CollectionGenerator.deploy(
+    //Grant necessary permissions to the pass manager to our new pass
+    await passManager.addManagedCollection(passNFT.target);
+    await passNFT.grantRole(NFT_MANAGER, passManager.target);
+
+    //Grant random consumer permissions to the pass
+    //Grant necessary permissions to use the random manager
+    await nftRandomManager.grantRole(NFT_RANDOM_MANAGER_ROLE, passNFT.target);
+    await passNFT.grantRole(NFT_RANDOM_MANAGER_ROLE, nftRandomManager.target);
+
+    //mint a pass for this user
+    await passManager.mintNFT(passNFT.target, "Pass 1");
+
+    //For now we will generate a guid that will be sent both to the pass manager and to the server
+    //In the future lets use the hash of the collection that the user is looking to
+    //And then use it to verify the collection integrity in the end
+    // Define a message
+    let originalMessage = "Hello world";
+    let signature = await owner.signMessage(originalMessage);
+
+    console.log(signature);
+    let signer = await passManager.testeGetSigner(originalMessage, signature);
+
+    console.log(owner.address);
+    console.log(signer);
+
+    //Deploy the collection
+    const CollectionConfigFactory = await ethers.getContractFactory(
+      "CollectionConfig"
+    );
+    const collection = await CollectionConfigFactory.deploy(
+      passManager.target,
+      passNFT.target,
+      0,
+      originalMessage,
+      signature
+    );
+
+    //Deploy the NFT
+    const CollectionNFTFactory = await ethers.getContractFactory(
+      "CollectionNFT"
+    );
+    const collectionNFT = await CollectionNFTFactory.deploy(
       collection.target,
       nftRandomManager.target,
       "localhost",
@@ -57,31 +108,30 @@ describe("NFT collectionGenerator", function () {
       "GGGG"
     );
 
-    //Give our newly deployed nft permissions to call nft random manager
+    //Grant necessary permissions to use the random manager
     await nftRandomManager.grantRole(
       NFT_RANDOM_MANAGER_ROLE,
-      collectionGenerator.target
+      collectionNFT.target
     );
-
-    //Specify on our newly deployed nft who can mint
-    await collectionGenerator.grantRole(NFT_MANAGER, shopManager.target);
-
-    //Specify on our newly deployed nft who can mint
-    await collectionGenerator.grantRole(
+    await collectionNFT.grantRole(
       NFT_RANDOM_MANAGER_ROLE,
       nftRandomManager.target
     );
 
-    //Add the collection to the list of managed collections on our nft manager
-    await shopManager.addManagedCollection(collectionGenerator.target);
-    await gameManager.addManagedCollection(collectionGenerator.target);
+    //Grant necessary permissions to the shop to our new collection
+    await shopManager.addManagedCollection(collectionNFT.target);
+    await collectionNFT.grantRole(NFT_MANAGER, shopManager.target);
+
+    //Grant necessary permissions to the game to our new collection
+    await gameManager.addManagedCollection(collectionNFT.target);
+    await collectionNFT.grantRole(NFT_MANAGER, gameManager.target);
 
     //Initialize genesis Colection traits
     await setupCharacterAttributes(collection);
 
     return {
       collection,
-      collectionGenerator,
+      collectionNFT,
       owner,
       shopManager,
       mockCoordinator,
@@ -90,11 +140,11 @@ describe("NFT collectionGenerator", function () {
     };
   }
 
-  describe("Test an instance of a Collection NFT - GenesisNFT", function () {
-    it("Shop and get item with genes 23895781004589149129578100458914450004567867867856785990002450", async function () {
+  describe("Test Forge", function () {
+    it("Shop/mint  an item that costs more than 0", async function () {
       const {
         collection,
-        collectionGenerator,
+        collectionNFT,
         owner,
         shopManager,
         mockCoordinator,
@@ -102,12 +152,10 @@ describe("NFT collectionGenerator", function () {
         gameManager,
       } = await deployContracts();
 
-      const result = await shopManager.getCollectionPrice(
-        collectionGenerator.target
-      );
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
       // console.log(result); // divide by 10**18 to get the AVAX Value
 
-      await shopManager.mintNFT(collectionGenerator.target, `Token `, {
+      await shopManager.mintNFT(collectionNFT.target, `Token `, {
         value: ethers.parseEther("0.9999"),
       });
 
@@ -116,15 +164,87 @@ describe("NFT collectionGenerator", function () {
         [23895781004589149129578100458914450004567867867856785990002450n]
       );
 
-      const nftJSON = await collectionGenerator.getNFTDetails(0);
+      const nftJSON = await collectionNFT.getNFTDetails(0);
+      const nftJSONString = JSON.stringify(nftJSON, bigIntParser);
+
+      expect(
+        nftJSONString,
+        "Attributes expected different from the generated ones "
+      ).to.equal(
+        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
+      );
+    });
+
+    it("Shops/mint and rerolls trait", async function () {
+      const {
+        collection,
+        collectionNFT,
+        owner,
+        shopManager,
+        mockCoordinator,
+        nftRandomManager,
+        gameManager,
+      } = await deployContracts();
+
+      await shopManager.mintNFT(collectionNFT.target, `Token `, {
+        value: ethers.parseEther("0.9999"),
+      });
+
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [23895781004589149129578100458914450004567867867856785990002450n]
+      );
+
+      let nftJSON = await collectionNFT.getNFTDetails(0);
+      let nftJSONString = JSON.stringify(nftJSON, bigIntParser);
+
+      expect(
+        nftJSONString,
+        "Attributes expected different from the generated ones before reroll"
+      ).to.equal(
+        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
+      );
+
+      //Rerol two traits
+      await gameManager.rerollAttribute(collectionNFT, 0, 11);
+      await gameManager.rerollAttribute(collectionNFT, 0, 13);
+
+      nftJSON = await collectionNFT.getNFTDetails(0);
+      nftJSONString = JSON.stringify(nftJSON, bigIntParser);
+      //console.log(nftJSONString);
+
+      expect(
+        nftJSONString,
+        "Attributes expected different from the generated ones after reroll"
+      ).to.equal(
+        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"99"],["1","12",true,"94"],["2","13",true,"4"],["0","15",true,"4"]]]'
+      );
+    });
+
+    it("Mint nft for free", async function () {
+      const {
+        collection,
+        collectionNFT,
+        owner,
+        shopManager,
+        mockCoordinator,
+        nftRandomManager,
+      } = await deployContracts();
+
+      await collection.setCollectionAttributes(0, 0, 0);
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+
+      await shopManager.mintNFT(collectionNFT.target, `Token `);
+
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [23895781004589149129578100458914450004567867867856785990002450n]
+      );
+
+      const nftJSON = await collectionNFT.getNFTDetails(0);
       const nftJSONString = JSON.stringify(nftJSON, (key, value) =>
         typeof value === "bigint" ? value.toString() : value
       );
-
-      let teste = await gameManager.rerollAttribute(collectionGenerator, 0, 11);
-      console.log(teste);
-      teste = await gameManager.rerollAttribute(collectionGenerator, 0, 13);
-      console.log(teste);
 
       expect(
         nftJSONString,
@@ -133,42 +253,6 @@ describe("NFT collectionGenerator", function () {
         '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
       );
     });
-  });
-
-  it("Shop at price 0 without sending any value", async function () {
-    const {
-      collection,
-      collectionGenerator,
-      owner,
-      shopManager,
-      mockCoordinator,
-      nftRandomManager,
-    } = await deployContracts();
-
-    await collection.setCollectionAttributes(0, 0, 0);
-    const result = await shopManager.getCollectionPrice(
-      collectionGenerator.target
-    );
-    console.log(result); // divide by 10**18 to get the AVAX Value
-
-    await shopManager.mintNFT(collectionGenerator.target, `Token `);
-
-    await mockCoordinator.mockVRFCoordinatorResponse(nftRandomManager.target, [
-      23895781004589149129578100458914450004567867867856785990002450n,
-    ]);
-
-    const nftJSON = await collectionGenerator.getNFTDetails(0);
-    const nftJSONString = JSON.stringify(nftJSON, (key, value) =>
-      typeof value === "bigint" ? value.toString() : value
-    );
-    999471054260n;
-
-    expect(
-      nftJSONString,
-      "Attributes for gene should have strenght 100 and arms blue and weapon and"
-    ).to.equal(
-      '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
-    );
   });
 });
 
@@ -204,3 +288,7 @@ async function setupCharacterAttributes(collectionInstance) {
     [10, 20, 30, 20, 20]
   );
 }
+
+const bigIntParser = (key, value) => {
+  return typeof value === "bigint" ? value.toString() : value;
+};

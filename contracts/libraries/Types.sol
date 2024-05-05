@@ -23,4 +23,9 @@ library Types {
 		bool isDefined;
 		uint32 value;
 	}
+
+	struct Pass {
+		address passAddress;
+		uint passId;
+	}
 }

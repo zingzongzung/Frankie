@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
-import "./ICollection.sol";
+import "./ICollectionConfig.sol";
 
-interface ICollectionGenerator is IAccessControl, IERC721 {
+interface ICollectionNFT is IAccessControl, IERC721 {
 	function getNFTDetails(uint256 tokenId) external view returns (Types.NFT memory);
 
 	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external;
@@ -28,4 +28,8 @@ interface ICollectionGenerator is IAccessControl, IERC721 {
 	 * @param genes The random number which represent the genes that will be used to determine the traits that will be given to the new nft
 	 */
 	function generate(uint tokenId, uint genes) external;
+
+	function getOwner(uint tokenId) external view returns (address);
+
+	function setTrait(uint256 tokenId, uint256 traitIndex, Types.Trait memory trait) external;
 }

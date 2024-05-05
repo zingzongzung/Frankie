@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./NFTManager.sol";
-import "../libraries/Generator.sol";
+import "./NFTManagerBase.sol";
+import "../../libraries/Generator.sol";
 
-contract GameManager is NFTManager {
+contract GameManager is NFTManagerBase {
 	function rerollAttribute(
 		address nftCollectionAddress,
 		uint256 tokenId,
 		uint8 traitKey
-	) external view onlyAuthorizedCollections(nftCollectionAddress) returns (Types.Trait memory result) {
-		ICollectionGenerator generator = ICollectionGenerator(nftCollectionAddress);
-		ICollection collection = ICollection(generator.getCollectionAddress());
+	) external onlyAuthorizedCollections(nftCollectionAddress) returns (Types.Trait memory result) {
+		(ICollectionConfig collection, ICollectionNFT generator) = getCollection(nftCollectionAddress);
+		require(generator.getOwner(tokenId) == msg.sender, "This nft is not owned by the sender!");
 
 		Types.NFT memory nft = generator.getNFTDetails(tokenId);
 		Types.TraitType traitType = collection.getTraitKeyType(traitKey);
@@ -25,11 +25,9 @@ contract GameManager is NFTManager {
 				if (traitType == Types.TraitType.Options || traitType == Types.TraitType.OptionsWithImage) {
 					result = Generator.rollOptionsTrait(collection, 99, traitKey, traitType);
 				}
-
+				generator.setTrait(tokenId, index, result);
 				break;
 			}
 		}
-
-		return result;
 	}
 }

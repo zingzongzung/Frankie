@@ -3,14 +3,16 @@ pragma solidity ^0.8.24;
 
 // Deploy this contract on Fuji
 
-import "../interfaces/ICollectionGenerator.sol";
-import "./NFTManager.sol";
+import "./NFTManagerBase.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "../../libraries/SignatureVerifier.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-contract ShopManager is NFTManager {
+contract PassManager is NFTManagerBase {
 	AggregatorV3Interface internal dataFeed;
 
-	constructor(address AvaxToUSDAggregatorAddress) NFTManager() {
+	constructor(address AvaxToUSDAggregatorAddress) NFTManagerBase() {
 		dataFeed = AggregatorV3Interface(AvaxToUSDAggregatorAddress);
 	}
 
@@ -33,8 +35,7 @@ contract ShopManager is NFTManager {
 	}
 
 	function _getCollectionPrice(address nftCollectionAddress) internal view returns (uint256 priceInAvaxToken) {
-		ICollectionGenerator generator = ICollectionGenerator(nftCollectionAddress);
-		ICollection collection = ICollection(generator.getCollectionAddress());
+		(ICollectionConfig collection, ) = getCollection(nftCollectionAddress);
 		(uint256 price, , ) = collection.getCollectionAttributes();
 		if (price > 0) {
 			priceInAvaxToken = usdToAvaxToken(price);
@@ -54,5 +55,34 @@ contract ShopManager is NFTManager {
 	function getChainlinkDataFeedAvaxToUSD() public view returns (int) {
 		(, int answer, , , ) = dataFeed.latestRoundData();
 		return answer;
+	}
+
+	function teste(address passNFTAddress, uint tokenId) external view returns (address) {
+		(, ICollectionNFT generator) = getCollection(passNFTAddress);
+		address passOwner = generator.getOwner(tokenId);
+
+		return passOwner;
+	}
+
+	function getEthSignedMessageHash(bytes32 _messageHash) internal pure returns (bytes32) {
+		/*
+        Signature is produced by signing a keccak256 hash with the following format:
+        "\x19Ethereum Signed Message\n" + len(msg) + msg
+        */
+		return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
+	}
+
+	function testeGetSigner(string memory originalMessage, bytes memory signature) external pure returns (address) {
+		(address signer, ECDSA.RecoverError err, ) = ECDSA.tryRecover(MessageHashUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(originalMessage))), signature);
+
+		return signer;
+	}
+
+	function isAuthorized(address passNFTAddress, uint tokenId, bytes32 originalMessage, bytes memory signature) external view {
+		(, ICollectionNFT generator) = getCollection(passNFTAddress);
+		address passOwner = generator.getOwner(tokenId);
+		bool isSignatureVerified = true; //SignatureVerification.verifySignature(passOwner, originalMessage, signature);
+
+		require(isSignatureVerified, "This nft is not owned by the sender!");
 	}
 }

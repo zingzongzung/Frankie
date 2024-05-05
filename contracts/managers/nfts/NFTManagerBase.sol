@@ -4,12 +4,12 @@ pragma solidity ^0.8.24;
 // Deploy this contract on Fuji
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../interfaces/ICollectionGenerator.sol";
-import "../interfaces/INFTManager.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "../../nfts/interfaces/ICollectionNFT.sol";
+import "./INFTManager.sol";
 
-abstract contract NFTManager is INFTManager, AccessControl, ReentrancyGuard {
+abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {
 	address[] managedCollectionGenerators;
 	mapping(address => uint8) managedCollectionGeneratorsIndex;
 
@@ -18,7 +18,7 @@ abstract contract NFTManager is INFTManager, AccessControl, ReentrancyGuard {
 	}
 
 	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal onlyAuthorizedCollections(nftCollectionAddress) {
-		ICollectionGenerator generator = ICollectionGenerator(nftCollectionAddress);
+		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
 
 		generator.safeMint(msg.sender, nftName);
 	}
@@ -34,6 +34,12 @@ abstract contract NFTManager is INFTManager, AccessControl, ReentrancyGuard {
 
 	function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
 		payable(msg.sender).transfer(address(this).balance);
+	}
+
+	//internal
+	function getCollection(address nftCollectionAddress) internal view returns (ICollectionConfig collection, ICollectionNFT generator) {
+		generator = ICollectionNFT(nftCollectionAddress);
+		collection = ICollectionConfig(generator.getCollectionAddress());
 	}
 
 	modifier onlyAuthorizedCollections(address nftCollectionAddress) {
