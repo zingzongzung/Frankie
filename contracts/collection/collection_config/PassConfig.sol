@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../interfaces/ICollectionConfig.sol";
+import "./ICollectionConfig.sol";
 import "../../libraries/Generator.sol";
 import "../../managers/nfts/PassManager.sol";
 
-contract CollectionConfig is ICollectionConfig {
+contract PassConfig is ICollectionConfig {
 	//Collection attributes
 	uint256 private collectionPrice;
 	uint16 private svgBoxHeight;
@@ -29,25 +29,6 @@ contract CollectionConfig is ICollectionConfig {
 	//Indexing
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
-
-	Types.Pass pass;
-	PassManager passManager;
-
-	string collectionHash;
-
-	bool isCollectionClosed;
-
-	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 originalMessage, bytes memory signature) {
-		passManager = PassManager(passManagerAddress);
-		passManager.isAuthorized(passAddress, passId, originalMessage, signature);
-		isCollectionClosed = false;
-		pass = Types.Pass(passAddress, passId);
-	}
-
-	function closeCollection() external {
-		//Calculate hash in a similiar way that was calculated by the front end
-		isCollectionClosed = true;
-	}
 
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
 		collectionPrice = _collectionPrice;

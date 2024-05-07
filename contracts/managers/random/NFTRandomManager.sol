@@ -6,7 +6,7 @@ pragma solidity ^0.8.24;
 import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../../nfts/interfaces/ICollectionNFT.sol";
+import "../../collection/collection_nft/ICollectionNFT.sol";
 import "../../libraries/Roles.sol";
 
 contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {

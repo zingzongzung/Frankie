@@ -9,6 +9,9 @@
   },
   "roles": {
     "randomManager": "0xba97d1e7c7cac970a86143e4a79d94ccf81090bb6c8dfb9571552cb2226d115c",
-    "shopManager": "0x5aabe1cd6d23a4f60b1542d0ac06d171c106a8feb324d268ae7aaf2fbabd1366"
-  }
+    "nftManager": "0x8972b9d3322325818f1215107c5cad20b0d1bd8a19dd8c3113a4cda650cdfe63",
+    "defaultAdmin": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "automationManager": "0x3b7a421a6643acf221d4c6271c18fc7dc0ca75864614a138bf7179c954253cc5"
+  },
+  "admins": ["0xeB1A1f54f0db797ffcfa1E59d93711A75d742c4d"]
 }

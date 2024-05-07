@@ -14,6 +14,9 @@ describe("NFT collectionNFT", function () {
     const NFT_MANAGER =
       "0x8972b9d3322325818f1215107c5cad20b0d1bd8a19dd8c3113a4cda650cdfe63";
 
+    const AUTOMATION_MANAGER =
+      "0x3b7a421a6643acf221d4c6271c18fc7dc0ca75864614a138bf7179c954253cc5";
+
     /** The following deploys should be made only once */
     //Deploy Mock Coordinator, this will help us simulate a call to the VRF Chainlink
     //Use this address instead when instantiating the random manager
@@ -42,8 +45,14 @@ describe("NFT collectionNFT", function () {
     const passConfig = await PassConfigFactory.deploy();
 
     //Deploy the game manager,
+    const AutomationManager = await ethers.getContractFactory(
+      "AutomationManager"
+    );
+    const automationManager = await AutomationManager.deploy(0, 2);
+
+    //Deploy the game manager,
     const GameManager = await ethers.getContractFactory("GameManager");
-    const gameManager = await GameManager.deploy();
+    const gameManager = await GameManager.deploy(automationManager);
 
     //Deploy the pass manager,
     const PassManager = await ethers.getContractFactory("PassManager");
@@ -69,10 +78,16 @@ describe("NFT collectionNFT", function () {
     await passNFT.grantRole(NFT_RANDOM_MANAGER_ROLE, nftRandomManager.target);
 
     //Mint a pass for otherAccount
-    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 1");
+    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 0");
 
     //Mint a pass for owner
-    await passManager.mintNFT(passNFT.target, "Pass 2");
+    await passManager.mintNFT(passNFT.target, "Pass 1");
+
+    //Mint a pass for otherAccount
+    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
+
+    console.log(await passNFT.getTokensOwnedBy(owner));
+    console.log(await passNFT.getTokensOwnedBy(otherAccount));
 
     const TEST_MESSAGE = "Example";
     const signature = await owner.signMessage(TEST_MESSAGE);
@@ -136,29 +151,38 @@ describe("NFT collectionNFT", function () {
   }
 
   describe("Test Forge", function () {
-    it("signs a message on client and gets the signer on the server", async function () {
-      const {
-        collection,
-        collectionNFT,
-        owner,
-        shopManager,
-        mockCoordinator,
-        nftRandomManager,
-        gameManager,
-        passManager,
-      } = await deployContracts();
+    it("Register some requests through a Single Game manager and process them when the upkeep runs", async function () {
+      const AUTOMATION_MANAGER =
+        "0x3b7a421a6643acf221d4c6271c18fc7dc0ca75864614a138bf7179c954253cc5";
 
-      const SignerTest = await ethers.getContractFactory("SignerTest");
-      const signerTest = await SignerTest.deploy();
+      //Deploy the game manager,
+      const AutomationManager = await ethers.getContractFactory(
+        "AutomationManager"
+      );
+      const automationManager = await AutomationManager.deploy(0, 2);
 
-      const TEST_MESSAGE = "Example";
+      //Deploy the game manager,
+      const GameManager = await ethers.getContractFactory("GameManager");
+      const gameManager = await GameManager.deploy(automationManager);
 
-      const signature = await owner.signMessage(TEST_MESSAGE);
-      const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
+      await automationManager.grantRole(AUTOMATION_MANAGER, gameManager.target);
+      await gameManager.grantRole(AUTOMATION_MANAGER, automationManager.target);
 
-      const result = await signerTest.recoverSigner(hashedSignature, signature);
+      const numberOfRequests = 10;
+      for (let i = 0; i < numberOfRequests; i++) {
+        await gameManager.testeRegisterNewAutomation();
+      }
 
-      expect(owner.address, "Signatures dont match ").to.equal(result);
+      console.log(await gameManager.getProcessedRequests());
+
+      const upkeepCallTimes = 5;
+      for (let i = 0; i < upkeepCallTimes; i++) {
+        await automationManager.performUpkeep(
+          AUTOMATION_MANAGER /** this just needs to be abytes so I am passing this */
+        );
+      }
+
+      console.log(await gameManager.getProcessedRequests());
     });
     it("Shop/mint  an item that costs more than 0", async function () {
       const {

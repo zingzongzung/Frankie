@@ -18,7 +18,7 @@ contract PassManager is NFTManagerBase {
 	function mintNFT(
 		address nftCollectionAddress,
 		string calldata nftName
-	) public payable onlyAuthorizedCollections(nftCollectionAddress) onlyEnoughFundsSent(nftCollectionAddress, msg.value) {
+	) external payable onlyAuthorizedCollections(nftCollectionAddress) onlyEnoughFundsSent(nftCollectionAddress, msg.value) {
 		_mintNFT(nftCollectionAddress, nftName);
 	}
 

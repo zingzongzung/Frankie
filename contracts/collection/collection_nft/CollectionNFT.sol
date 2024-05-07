@@ -72,11 +72,34 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		myNft.traits[traitIndex] = trait;
 	}
 
+	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {
+		uint256 balance = balanceOf(wallet);
+		uint256[] memory tokensOwned = new uint256[](balance);
+
+		for (uint256 i = 0; i < balance; i++) {
+			tokensOwned[i] = tokenOfOwnerByIndex(wallet, i);
+		}
+
+		return tokensOwned;
+	}
+
 	//Internal Functions
 	function startRandomProcess(uint256 tokenId, string memory name) internal {
 		Types.NFT storage myNft = nfts[tokenId];
 		myNft.name = name;
 		requestRandom(address(this), tokenId);
+	}
+
+	function tokenOfOwnerByIndex(address owner, uint startIndex) internal view returns (uint256) {
+		return tokenOfOwnerByIndexRecursive(owner, startIndex);
+	}
+
+	function tokenOfOwnerByIndexRecursive(address owner, uint256 currentIndex) internal view returns (uint256) {
+		if (ownerOf(currentIndex) == owner) {
+			return currentIndex;
+		} else {
+			return tokenOfOwnerByIndexRecursive(owner, currentIndex + 1);
+		}
 	}
 
 	function copy(Types.NFT storage target, Types.NFT memory origin) internal {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../nfts/interfaces/ICollectionConfig.sol";
+import "../collection/collection_config/ICollectionConfig.sol";
 import "./NumberUtils.sol";
 import "./Types.sol";
 

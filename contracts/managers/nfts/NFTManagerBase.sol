@@ -6,7 +6,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import "../../nfts/interfaces/ICollectionNFT.sol";
+import "../../collection/collection_nft/ICollectionNFT.sol";
 import "./INFTManager.sol";
 
 abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {

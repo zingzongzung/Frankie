@@ -5,4 +5,5 @@ library Roles {
 	//Roles
 	bytes32 public constant NFT_RANDOM_MANAGER = keccak256("NFT_RANDOM_MANAGER");
 	bytes32 public constant NFT_MANAGER = keccak256("NFT_MANAGER");
+	bytes32 public constant AUTOMATION_MANAGER = keccak256("AUTOMATION_MANAGER");
 }
