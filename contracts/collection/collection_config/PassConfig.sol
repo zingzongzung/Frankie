@@ -30,6 +30,9 @@ contract PassConfig is ICollectionConfig {
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
 
+	//IERC7496 compatibility
+	mapping(bytes32 => uint8) traitKeyIndex;
+
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
 		collectionPrice = _collectionPrice;
 		svgBoxHeight = _svgBoxHeight;
@@ -100,15 +103,15 @@ contract PassConfig is ICollectionConfig {
 		return (traitNumberMin[traitKeyId], traitNumberMax[traitKeyId]);
 	}
 
-	function getTraitOptionsLabel(uint8 traitKeyId, uint8 traitId) external view returns (string memory) {
+	function getTraitOptionsLabel(uint8 traitKeyId, uint32 traitId) external view returns (string memory) {
 		return traitOptionLabels[traitKeyId][traitId];
 	}
 
-	function getTraitOptionChance(uint8 traitKeyId, uint8 traitId) external view returns (uint8) {
+	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8) {
 		return traitOptionChances[traitKeyId][traitId];
 	}
 
-	function getTraitOptionsImage(uint8 traitKeyId, uint8 traitId) external view returns (string memory result) {
+	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result) {
 		if (traitOptionImages[traitKeyId].length == 0) {
 			result = "";
 		} else {
@@ -165,5 +168,9 @@ contract PassConfig is ICollectionConfig {
 			result = reducer(result, array[i]);
 		}
 		return result;
+	}
+
+	function getTraitIndexByKey(bytes32 traitKey) external view override returns (uint8) {
+		return traitKeyIndex[traitKey];
 	}
 }

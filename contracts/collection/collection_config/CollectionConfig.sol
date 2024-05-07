@@ -11,7 +11,7 @@ contract CollectionConfig is ICollectionConfig {
 	uint16 private svgBoxHeight;
 	uint16 private svgBoxWidth;
 
-	//This represents all the collectionTraits
+	//This represents all the collectionTraits that can be part of an NFT
 	uint8 traitsLength;
 	mapping(uint8 => string) traitLabels;
 	mapping(uint8 => Types.TraitType) atributeTypes;
@@ -30,10 +30,11 @@ contract CollectionConfig is ICollectionConfig {
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
 
+	//IERC7496 compatibility
+	mapping(bytes32 => uint8) traitKeyIndex;
+
 	Types.Pass pass;
 	PassManager passManager;
-
-	string collectionHash;
 
 	bool isCollectionClosed;
 
@@ -42,6 +43,7 @@ contract CollectionConfig is ICollectionConfig {
 		passManager.isAuthorized(passAddress, passId, originalMessage, signature);
 		isCollectionClosed = false;
 		pass = Types.Pass(passAddress, passId);
+		passManager.setPassUsed(passAddress, passId);
 	}
 
 	function closeCollection() external {
@@ -111,6 +113,7 @@ contract CollectionConfig is ICollectionConfig {
 		traitChances[traitKey] = traitChance - 1; //0 will represent 1% and 99 100%
 		traitKeysByName[traitLabel] = traitKey;
 		traitKeysByIndex[traitsLength] = traitKey;
+		traitKeyIndex[keccak256(abi.encodePacked(traitLabel))] = traitsLength;
 		_;
 		traitsLength++;
 	}
@@ -119,15 +122,15 @@ contract CollectionConfig is ICollectionConfig {
 		return (traitNumberMin[traitKeyId], traitNumberMax[traitKeyId]);
 	}
 
-	function getTraitOptionsLabel(uint8 traitKeyId, uint8 traitId) external view returns (string memory) {
+	function getTraitOptionsLabel(uint8 traitKeyId, uint32 traitId) external view returns (string memory) {
 		return traitOptionLabels[traitKeyId][traitId];
 	}
 
-	function getTraitOptionChance(uint8 traitKeyId, uint8 traitId) external view returns (uint8) {
+	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8) {
 		return traitOptionChances[traitKeyId][traitId];
 	}
 
-	function getTraitOptionsImage(uint8 traitKeyId, uint8 traitId) external view returns (string memory result) {
+	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result) {
 		if (traitOptionImages[traitKeyId].length == 0) {
 			result = "";
 		} else {
@@ -184,5 +187,9 @@ contract CollectionConfig is ICollectionConfig {
 			result = reducer(result, array[i]);
 		}
 		return result;
+	}
+
+	function getTraitIndexByKey(bytes32 traitKey) external view override returns (uint8) {
+		return traitKeyIndex[traitKey];
 	}
 }

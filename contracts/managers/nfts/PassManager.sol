@@ -6,10 +6,13 @@ pragma solidity ^0.8.24;
 import "./NFTManagerBase.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "../../libraries/Types.sol";
 
 contract PassManager is NFTManagerBase {
 	using ECDSA for bytes32;
 	AggregatorV3Interface internal dataFeed;
+
+	mapping(address => uint[]) passIdsUsed;
 
 	constructor(address AvaxToUSDAggregatorAddress) NFTManagerBase() {
 		dataFeed = AggregatorV3Interface(AvaxToUSDAggregatorAddress);
@@ -27,6 +30,10 @@ contract PassManager is NFTManagerBase {
 		uint256 avaxWeiNeeded = (uint(collectionPriceInUSD) * 10 ** 24) / avaxUsd; //24 18 from wei + 8 from avaxtousd - 2 from the collection price
 
 		return avaxWeiNeeded;
+	}
+
+	function setPassUsed(address nftCollectionAddress, uint passId) external onlyAuthorizedCollections(nftCollectionAddress) {
+		passIdsUsed[nftCollectionAddress].push(passId);
 	}
 
 	function getCollectionPrice(address nftCollectionAddress) external view onlyAuthorizedCollections(nftCollectionAddress) returns (uint256) {
@@ -56,11 +63,26 @@ contract PassManager is NFTManagerBase {
 		return answer;
 	}
 
-	function isAuthorized(address passNFTAddress, uint tokenId, bytes32 originalMessage, bytes memory signature) external view {
-		(, ICollectionNFT generator) = getCollection(passNFTAddress);
+	modifier verifyPassValidity(address nftCollectionAddress, uint tokenId) {
+		uint[] memory passesUsed = passIdsUsed[nftCollectionAddress];
+		for (uint index; index < passesUsed.length; index++) {
+			if (passesUsed[index] == tokenId) {
+				revert("This pass has been used already");
+			}
+		}
+		_;
+	}
+
+	function isAuthorized(
+		address nftCollectionAddress,
+		uint tokenId,
+		bytes32 originalMessage,
+		bytes memory signature
+	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
+		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
 		address passOwner = generator.getOwner(tokenId);
 		bool isSignatureVerified = originalMessage.recover(signature) == passOwner;
 
-		require(isSignatureVerified, "This nft is not owned by the sender!");
+		require(isSignatureVerified, "The pass is not owned by the sender!");
 	}
 }

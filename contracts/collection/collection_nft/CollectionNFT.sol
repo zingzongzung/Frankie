@@ -2,17 +2,19 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../../managers/random/RandomConsumerBase.sol";
 import "../../libraries/NumberUtils.sol";
 import "../../libraries/Roles.sol";
+import "./IERC7496.sol";
 
-contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC721 {
+contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC721, IERC7496 {
 	using Strings for address;
 	using Strings for uint;
 
-	ICollectionConfig private myCollection;
+	ICollectionConfig private collectionConfig;
 
 	string private tokenURIBaseURL;
 
@@ -28,7 +30,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	) ERC721(name, symbol) RandomConsumerBase(nftRandomManagerAddress) {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		tokenURIBaseURL = _tokenURI;
-		myCollection = ICollectionConfig(collectionAddress);
+		collectionConfig = ICollectionConfig(collectionAddress);
 	}
 
 	//Permissioned functions
@@ -43,16 +45,17 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function generate(uint tokenId, uint genes) external override(ICollectionNFT, IRandomConsumer) onlyRole(Roles.NFT_RANDOM_MANAGER) {
-		copy(nfts[tokenId], myCollection.generateNFT(genes));
+		copy(nfts[tokenId], collectionConfig.generateNFT(genes));
+
+		emit TraitMetadataURIUpdated();
 	}
 
-	//View Functions
 	function getNFTDetails(uint256 tokenId) public view returns (Types.NFT memory) {
 		return nfts[tokenId];
 	}
 
 	function getCollectionAddress() external view returns (address) {
-		return address(myCollection);
+		return address(collectionConfig);
 	}
 
 	function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
@@ -60,7 +63,42 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
-		return string(abi.encodePacked(tokenURIBaseURL, "/", address(this).toHexString(), "/", tokenId.toString(), "/", address(myCollection).toHexString()));
+		return string(abi.encodePacked(tokenURIBaseURL, "/GetTokenURI", address(this).toHexString(), "/", tokenId.toString(), "/", address(collectionConfig).toHexString()));
+	}
+
+	function _getTraitValue(uint256 tokenId, bytes32 traitKey) internal view returns (bytes32 traitValue) {
+		uint8 collectionConfigTraitKey = collectionConfig.getTraitIndexByKey(traitKey);
+		Types.NFT storage nft = nfts[tokenId];
+		Types.Trait memory trait = nft.traits[collectionConfigTraitKey];
+
+		if (trait.isDefined) {
+			if (trait.traitType == Types.TraitType.Number) {
+				traitValue = keccak256(abi.encodePacked(trait.value));
+			} else {
+				traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(collectionConfigTraitKey, trait.value)));
+			}
+		}
+	}
+
+	/** Dynamic NFT */
+	function getTraitValue(uint256 tokenId, bytes32 traitKey) external view returns (bytes32 traitValue) {
+		return _getTraitValue(tokenId, traitKey);
+	}
+
+	function getTraitValues(uint256 tokenId, bytes32[] calldata traitKeys) external view returns (bytes32[] memory traitValues) {
+		traitValues = new bytes32[](traitKeys.length);
+		for (uint i; i < traitKeys.length; i++) {
+			traitValues[i] = _getTraitValue(tokenId, traitKeys[i]);
+		}
+	}
+
+	function getTraitMetadataURI() external view returns (string memory uri) {
+		return string(abi.encodePacked(tokenURIBaseURL, "/GetTraitMetadataURI/", address(collectionConfig).toHexString()));
+	}
+
+	/* Setters */
+	function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 traitValue) external {
+		//Not using this for now
 	}
 
 	function getOwner(uint tokenId) external view override returns (address) {
@@ -70,6 +108,16 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function setTrait(uint256 tokenId, uint256 traitIndex, Types.Trait memory trait) external override onlyRole(Roles.NFT_MANAGER) {
 		Types.NFT storage myNft = nfts[tokenId];
 		myNft.traits[traitIndex] = trait;
+
+		bytes32 traitKey = keccak256(abi.encodePacked(collectionConfig.getTraitLabel(trait.key)));
+		bytes32 traitValue;
+		if (trait.traitType == Types.TraitType.Number) {
+			traitValue = keccak256(abi.encodePacked(trait.value));
+		} else {
+			traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(trait.key, trait.value)));
+		}
+
+		emit TraitUpdated(traitKey, tokenId, traitValue);
 	}
 
 	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {

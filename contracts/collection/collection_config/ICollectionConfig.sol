@@ -23,11 +23,11 @@ interface ICollectionConfig {
 
 	function getTraitNumberConfig(uint8 traitKeyId) external view returns (uint32 min, uint32 max);
 
-	function getTraitOptionsLabel(uint8 traitKeyId, uint8 traitId) external view returns (string memory);
+	function getTraitOptionsLabel(uint8 traitKeyId, uint32 traitId) external view returns (string memory);
 
-	function getTraitOptionChance(uint8 traitKeyId, uint8 traitId) external view returns (uint8);
+	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8);
 
-	function getTraitOptionsImage(uint8 traitKeyId, uint8 traitId) external view returns (string memory result);
+	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result);
 
 	function getNumberOfTraits() external view returns (uint8 numberOfTraits);
 
@@ -44,4 +44,7 @@ interface ICollectionConfig {
 	function generateNFT(uint genes) external view returns (Types.NFT memory);
 
 	function getTraitKeyByName(string memory traitName) external view returns (uint8);
+
+	//IERC7496
+	function getTraitIndexByKey(bytes32 traitKey) external view returns (uint8);
 }

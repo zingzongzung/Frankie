@@ -86,12 +86,19 @@ describe("NFT collectionNFT", function () {
     //Mint a pass for otherAccount
     await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
 
+    //Mint a pass for owner
+    await passManager.mintNFT(passNFT.target, "Pass 3");
+
     console.log(await passNFT.getTokensOwnedBy(owner));
     console.log(await passNFT.getTokensOwnedBy(otherAccount));
 
     const TEST_MESSAGE = "Example";
+
     const signature = await owner.signMessage(TEST_MESSAGE);
     const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
+
+    console.log(signature);
+    console.log(hashedSignature);
 
     //Deploy the collection
     const CollectionConfigFactory = await ethers.getContractFactory(
@@ -104,6 +111,14 @@ describe("NFT collectionNFT", function () {
       hashedSignature,
       signature
     );
+
+    // const collection2 = await CollectionConfigFactory.deploy(
+    //   passManager.target,
+    //   passNFT.target,
+    //   2,
+    //   hashedSignature,
+    //   signature
+    // );
 
     //Deploy the NFT
     const CollectionNFTFactory = await ethers.getContractFactory(
