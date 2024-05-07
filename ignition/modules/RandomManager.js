@@ -1,7 +1,7 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 const { vrf, roles, admins } = require("./Configurations.json");
 
-//npx hardhat ignition deploy ignition/modules/01_DeployInfrastructure.js --network fuji --reset
+//npx hardhat ignition deploy ignition/modules/RandomManager.js --network fuji --reset
 module.exports = buildModule("RandomManager", (m) => {
   const nftRandomManager = m.contract("NFTRandomManager", [
     vrf.subId,
@@ -16,13 +16,12 @@ module.exports = buildModule("RandomManager", (m) => {
     });
   });
 
-  //
-  //Add Consumer to VRF coordinator
-  // const coordinator = m.contractAt(
-  //   "VRFCoordinatorV2Impl",
-  //   VRF_COORDINATOR_ADDRESS
-  // );
-  // m.call(coordinator, "addConsumer", [VRF_SUBSCRIPTION_ID, genesisGenerator]);
+  //Add Random manager to VRF
+  const coordinator = m.contractAt(
+    "VRFCoordinatorV2Interface",
+    vrf.coordinatorAddress
+  );
+  m.call(coordinator, "addConsumer", [vrf.subId, nftRandomManager]);
 
   return { nftRandomManager };
 });

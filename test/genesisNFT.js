@@ -89,16 +89,13 @@ describe("NFT collectionNFT", function () {
     //Mint a pass for owner
     await passManager.mintNFT(passNFT.target, "Pass 3");
 
-    console.log(await passNFT.getTokensOwnedBy(owner));
-    console.log(await passNFT.getTokensOwnedBy(otherAccount));
+    // console.log(await passNFT.getTokensOwnedBy(owner));
+    // console.log(await passNFT.getTokensOwnedBy(otherAccount));
 
     const TEST_MESSAGE = "Example";
 
     const signature = await owner.signMessage(TEST_MESSAGE);
     const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
-
-    console.log(signature);
-    console.log(hashedSignature);
 
     //Deploy the collection
     const CollectionConfigFactory = await ethers.getContractFactory(
@@ -188,7 +185,7 @@ describe("NFT collectionNFT", function () {
         await gameManager.testeRegisterNewAutomation();
       }
 
-      console.log(await gameManager.getProcessedRequests());
+      //console.log(await gameManager.getProcessedRequests());
 
       const upkeepCallTimes = 5;
       for (let i = 0; i < upkeepCallTimes; i++) {
@@ -197,7 +194,7 @@ describe("NFT collectionNFT", function () {
         );
       }
 
-      console.log(await gameManager.getProcessedRequests());
+      //console.log(await gameManager.getProcessedRequests());
     });
     it("Shop/mint  an item that costs more than 0", async function () {
       const {
