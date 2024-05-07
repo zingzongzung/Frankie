@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../collection/collection_config/ICollectionConfig.sol";
+import "../collection/collection_config/ICollectionConfigV2.sol";
 import "./NumberUtils.sol";
 import "./Types.sol";
 
-library Generator {
-	function generateNFT(ICollectionConfig myCollection, uint genes) internal view returns (Types.NFT memory) {
+library GeneratorV2 {
+	function generateNFT(ICollectionConfigV2 myCollection, uint genes) internal view returns (Types.NFTV2 memory) {
 		//78 is the maximum length for the genes, when current position reaches 78, restart
 		uint8 genesIndex = 0;
 		Types.TraitType currentTraitType;
 		uint8 numberOfTraits = myCollection.getNumberOfTraits();
 		bool hasTrait;
 
-		Types.NFT memory result;
-		result.traits = new Types.Trait[](numberOfTraits);
+		Types.NFTV2 memory result;
+		result.traits = new Types.TraitV2[](numberOfTraits);
 		result.chancesGene = new uint32[](numberOfTraits);
 
 		result.genes = genes;
 		result.genesLength = NumberUtils.countDigits(genes);
 
-		uint8 traitKey;
+		bytes32 traitKey;
 
 		for (uint8 i; i < numberOfTraits; i++) {
 			traitKey = myCollection.getTraitKeyByIndex(i);
@@ -29,7 +29,7 @@ library Generator {
 
 			result.chancesGene[i] = chancesGene;
 			if (hasTrait) {
-				currentTraitType = myCollection.getTraitKeyType(traitKey);
+				currentTraitType = myCollection.getTraitType(traitKey);
 				if (currentTraitType == Types.TraitType.Number) {
 					genesIndex = generateNumberTrait(myCollection, genesIndex, traitKey, result, i);
 				} else if (currentTraitType == Types.TraitType.Options || currentTraitType == Types.TraitType.OptionsWithImage) {
@@ -43,7 +43,7 @@ library Generator {
 		return result;
 	}
 
-	function generateNumberTrait(ICollectionConfig myCollection, uint8 genesIndex, uint8 traitKey, Types.NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
+	function generateNumberTrait(ICollectionConfigV2 myCollection, uint8 genesIndex, bytes32 traitKey, Types.NFTV2 memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
 		uint32 traitValue;
 		uint32 traitNumberGenes;
 
@@ -56,17 +56,17 @@ library Generator {
 		return genesIndex;
 	}
 
-	function generateTextTrait(ICollectionConfig myCollection, uint8 genesIndex, uint8 traitKey, Types.NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
-		myNft.traits[nftTraitIndex] = Types.Trait(Types.TraitType.Text, traitKey, true, 0, myCollection.getTraitTextInitialValue(traitKey));
+	function generateTextTrait(ICollectionConfigV2 myCollection, uint8 genesIndex, bytes32 traitKey, Types.NFTV2 memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
+		myNft.traits[nftTraitIndex] = Types.TraitV2(true, Types.TraitType.Text, traitKey, myCollection.getTraitValue(traitKey));
 
 		return genesIndex;
 	}
 
 	function generateOptionsTrait(
-		ICollectionConfig myCollection,
+		ICollectionConfigV2 myCollection,
 		uint8 genesIndex,
-		uint8 attrKey,
-		Types.NFT memory myNft,
+		bytes32 attrKey,
+		Types.NFTV2 memory myNft,
 		uint8 nftTraitIndex,
 		Types.TraitType traitType
 	) internal view returns (uint8) {
@@ -78,16 +78,16 @@ library Generator {
 		return genesIndex;
 	}
 
-	function rollNumberTrait(ICollectionConfig myCollection, uint32 traitNumberGenes, uint8 traitKey) internal view returns (Types.Trait memory) {
+	function rollNumberTrait(ICollectionConfigV2 myCollection, uint32 traitNumberGenes, bytes32 traitKey) internal view returns (Types.TraitV2 memory) {
 		uint32 traitValue;
 
 		(uint32 traitMin, uint32 traitMax) = myCollection.getTraitNumberConfig(traitKey);
 
 		traitValue = NumberUtils.mapToRange(traitMin, traitMax, traitNumberGenes);
-		return Types.Trait(Types.TraitType.Number, traitKey, true, traitValue, bytes32(0));
+		return Types.TraitV2(true, Types.TraitType.Number, traitKey, bytes32(uint256(traitValue)));
 	}
 
-	function rollOptionsTrait(ICollectionConfig myCollection, uint32 chancesGene, uint8 attrKey, Types.TraitType traitType) internal view returns (Types.Trait memory result) {
+	function rollOptionsTrait(ICollectionConfigV2 myCollection, uint32 chancesGene, bytes32 attrKey, Types.TraitType traitType) internal view returns (Types.TraitV2 memory result) {
 		uint32 currentChance = 0;
 
 		uint8[] memory traitChances = myCollection.getTraitOptionChances(attrKey);
@@ -95,7 +95,7 @@ library Generator {
 		for (uint8 traitIndex; traitIndex < traitsLength; traitIndex++) {
 			currentChance = currentChance + traitChances[traitIndex];
 			if (performChanceCheck(currentChance, chancesGene)) {
-				result = Types.Trait(traitType, attrKey, true, traitIndex, bytes32(0));
+				result = Types.TraitV2(true, traitType, attrKey, bytes32(uint256(traitIndex)));
 				break;
 			}
 		}

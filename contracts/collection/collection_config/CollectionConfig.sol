@@ -73,7 +73,7 @@ contract CollectionConfig is ICollectionConfig {
 		uint8[] memory chances
 	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.Options, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
-		require(sum(chances) == 100);
+		require(NumberUtils.sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;
 		traitOptionLabels[traitKey] = valueLabels;
 	}
@@ -87,7 +87,7 @@ contract CollectionConfig is ICollectionConfig {
 		string[] memory images
 	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.OptionsWithImage, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
-		require(sum(chances) == 100);
+		require(NumberUtils.sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;
 		traitOptionLabels[traitKey] = valueLabels;
 		traitOptionImages[traitKey] = images;
@@ -143,10 +143,6 @@ contract CollectionConfig is ICollectionConfig {
 		return traitOptionLabels[traitKeyId][traitId];
 	}
 
-	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8) {
-		return traitOptionChances[traitKeyId][traitId];
-	}
-
 	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result) {
 		if (traitOptionImages[traitKeyId].length == 0) {
 			result = "";
@@ -188,23 +184,6 @@ contract CollectionConfig is ICollectionConfig {
 	}
 
 	//helpers
-
-	// Example usage: Sum of all elements in an array
-	function sum(uint8[] memory array) public pure returns (uint8) {
-		return reduce(array, add, 0);
-	}
-
-	function add(uint8 a, uint8 b) internal pure returns (uint8) {
-		return a + b;
-	}
-
-	function reduce(uint8[] memory array, function(uint8, uint8) pure returns (uint8) reducer, uint8 initialValue) internal pure returns (uint8) {
-		uint8 result = initialValue;
-		for (uint8 i = 0; i < array.length; i++) {
-			result = reducer(result, array[i]);
-		}
-		return result;
-	}
 
 	function getTraitIndexByKey(bytes32 traitKey) external view override returns (uint8) {
 		return traitKeyIndex[traitKey];

@@ -119,10 +119,6 @@ contract PassConfig is ICollectionConfig {
 		return traitOptionLabels[traitKeyId][traitId];
 	}
 
-	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8) {
-		return traitOptionChances[traitKeyId][traitId];
-	}
-
 	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result) {
 		if (traitOptionImages[traitKeyId].length == 0) {
 			result = "";

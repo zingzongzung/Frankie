@@ -66,4 +66,21 @@ library NumberUtils {
 
 		return count;
 	}
+
+	// Example usage: Sum of all elements in an array
+	function sum(uint8[] memory array) internal pure returns (uint8) {
+		return reduce(array, add, 0);
+	}
+
+	function add(uint8 a, uint8 b) internal pure returns (uint8) {
+		return a + b;
+	}
+
+	function reduce(uint8[] memory array, function(uint8, uint8) pure returns (uint8) reducer, uint8 initialValue) internal pure returns (uint8) {
+		uint8 result = initialValue;
+		for (uint8 i = 0; i < array.length; i++) {
+			result = reducer(result, array[i]);
+		}
+		return result;
+	}
 }

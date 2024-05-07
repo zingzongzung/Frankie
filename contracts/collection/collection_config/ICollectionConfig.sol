@@ -25,8 +25,6 @@ interface ICollectionConfig {
 
 	function getTraitOptionsLabel(uint8 traitKeyId, uint32 traitId) external view returns (string memory);
 
-	function getTraitOptionChance(uint8 traitKeyId, uint32 traitId) external view returns (uint8);
-
 	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result);
 
 	function getNumberOfTraits() external view returns (uint8 numberOfTraits);

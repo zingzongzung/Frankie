@@ -26,6 +26,21 @@ library Types {
 		bytes32 textValue;
 	}
 
+	struct NFTV2 {
+		string name;
+		uint genes;
+		uint8 genesLength;
+		uint32[] chancesGene;
+		TraitV2[] traits;
+	}
+
+	struct TraitV2 {
+		bool isDefined;
+		Types.TraitType traitType;
+		bytes32 key;
+		bytes32 value;
+	}
+
 	struct Pass {
 		address passAddress;
 		uint passId;
