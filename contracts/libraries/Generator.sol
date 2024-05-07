@@ -34,6 +34,8 @@ library Generator {
 					genesIndex = generateNumberTrait(myCollection, genesIndex, traitKey, result, i);
 				} else if (currentTraitType == Types.TraitType.Options || currentTraitType == Types.TraitType.OptionsWithImage) {
 					genesIndex = generateOptionsTrait(myCollection, genesIndex, traitKey, result, i, currentTraitType);
+				} else if (currentTraitType == Types.TraitType.Text) {
+					generateTextTrait(myCollection, genesIndex, traitKey, result, i);
 				}
 			}
 		}
@@ -50,6 +52,12 @@ library Generator {
 
 		traitValue = NumberUtils.mapToRange(traitMin, traitMax, traitNumberGenes);
 		myNft.traits[nftTraitIndex] = rollNumberTrait(myCollection, traitNumberGenes, traitKey);
+
+		return genesIndex;
+	}
+
+	function generateTextTrait(ICollectionConfig myCollection, uint8 genesIndex, uint8 traitKey, Types.NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
+		myNft.traits[nftTraitIndex] = Types.Trait(Types.TraitType.Text, traitKey, true, 0, myCollection.getTraitTextInitialValue(traitKey));
 
 		return genesIndex;
 	}
@@ -76,7 +84,7 @@ library Generator {
 		(uint32 traitMin, uint32 traitMax) = myCollection.getTraitNumberConfig(traitKey);
 
 		traitValue = NumberUtils.mapToRange(traitMin, traitMax, traitNumberGenes);
-		return Types.Trait(Types.TraitType.Number, traitKey, true, traitValue);
+		return Types.Trait(Types.TraitType.Number, traitKey, true, traitValue, bytes32(0));
 	}
 
 	function rollOptionsTrait(ICollectionConfig myCollection, uint32 chancesGene, uint8 attrKey, Types.TraitType traitType) internal view returns (Types.Trait memory result) {
@@ -87,7 +95,7 @@ library Generator {
 		for (uint8 traitIndex; traitIndex < traitsLength; traitIndex++) {
 			currentChance = currentChance + myCollection.getTraitOptionChance(attrKey, traitIndex);
 			if (performChanceCheck(currentChance, chancesGene)) {
-				result = Types.Trait(traitType, attrKey, true, traitIndex);
+				result = Types.Trait(traitType, attrKey, true, traitIndex, bytes32(0));
 				break;
 			}
 		}

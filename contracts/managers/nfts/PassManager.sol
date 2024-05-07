@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import "./NFTManagerBase.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "../../libraries/Types.sol";
 
 contract PassManager is NFTManagerBase {
@@ -82,6 +83,21 @@ contract PassManager is NFTManagerBase {
 		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
 		address passOwner = generator.getOwner(tokenId);
 		bool isSignatureVerified = originalMessage.recover(signature) == passOwner;
+
+		require(isSignatureVerified, "The pass is not owned by the sender!");
+	}
+
+	function isAuthorizedV2(
+		address nftCollectionAddress,
+		uint tokenId,
+		string memory originalMessage,
+		bytes memory signature
+	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
+		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
+		address passOwner = generator.getOwner(tokenId);
+
+		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(bytes(originalMessage));
+		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");
 	}

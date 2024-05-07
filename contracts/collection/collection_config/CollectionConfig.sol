@@ -26,6 +26,9 @@ contract CollectionConfig is ICollectionConfig {
 	mapping(uint8 => uint32) traitNumberMin;
 	mapping(uint8 => uint32) traitNumberMax;
 
+	//Text Types
+	mapping(uint8 => bytes32) traitTextValue;
+
 	//Indexing
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
@@ -40,6 +43,7 @@ contract CollectionConfig is ICollectionConfig {
 
 	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 originalMessage, bytes memory signature) {
 		passManager = PassManager(passManagerAddress);
+		//passManager.isAuthorizedV2(passAddress, passId, originalMessage, signature);
 		passManager.isAuthorized(passAddress, passId, originalMessage, signature);
 		isCollectionClosed = false;
 		pass = Types.Pass(passAddress, passId);
@@ -101,6 +105,15 @@ contract CollectionConfig is ICollectionConfig {
 		traitNumberMax[traitKey] = max;
 	}
 
+	function addTextTrait(
+		uint8 traitKey,
+		string memory traitLabel,
+		uint8 traitChance,
+		string memory traitValue
+	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.Text, traitChance) {
+		traitTextValue[traitKey] = keccak256(abi.encodePacked(traitValue));
+	}
+
 	modifier addBaseTrait(
 		uint8 traitKey,
 		string memory traitLabel,
@@ -116,6 +129,10 @@ contract CollectionConfig is ICollectionConfig {
 		traitKeyIndex[keccak256(abi.encodePacked(traitLabel))] = traitsLength;
 		_;
 		traitsLength++;
+	}
+
+	function getTraitTextInitialValue(uint8 traitKeyId) external view returns (bytes32) {
+		return traitTextValue[traitKeyId];
 	}
 
 	function getTraitNumberConfig(uint8 traitKeyId) external view returns (uint32 min, uint32 max) {

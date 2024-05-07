@@ -26,6 +26,9 @@ contract PassConfig is ICollectionConfig {
 	mapping(uint8 => uint32) traitNumberMin;
 	mapping(uint8 => uint32) traitNumberMax;
 
+	//Text Types
+	mapping(uint8 => bytes32) traitTextValue;
+
 	//Indexing
 	mapping(string => uint8) traitKeysByName;
 	mapping(uint8 => uint8) traitKeysByIndex;
@@ -69,6 +72,15 @@ contract PassConfig is ICollectionConfig {
 		traitOptionChances[traitKey] = chances;
 		traitOptionLabels[traitKey] = valueLabels;
 		traitOptionImages[traitKey] = images;
+	}
+
+	function addTextTrait(
+		uint8 traitKey,
+		string memory traitLabel,
+		uint8 traitChance,
+		string memory traitValue
+	) external addBaseTrait(traitKey, traitLabel, Types.TraitType.Text, traitChance) {
+		traitTextValue[traitKey] = keccak256(abi.encodePacked(traitValue));
 	}
 
 	function addNumberTrait(
@@ -137,6 +149,10 @@ contract PassConfig is ICollectionConfig {
 
 	function getTraitChance(uint8 traitKeyId) external view returns (uint8) {
 		return traitChances[traitKeyId];
+	}
+
+	function getTraitTextInitialValue(uint8 traitKeyId) external view returns (bytes32) {
+		return traitTextValue[traitKeyId];
 	}
 
 	function getTraitKeyByIndex(uint8 traitIndex) external view returns (uint8) {

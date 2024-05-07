@@ -94,8 +94,8 @@ describe("NFT collectionNFT", function () {
 
     const TEST_MESSAGE = "Example";
 
+    const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
     const signature = await owner.signMessage(TEST_MESSAGE);
-    const hashedSignature = ethers.hashMessage(TEST_MESSAGE);
 
     //Deploy the collection
     const CollectionConfigFactory = await ethers.getContractFactory(
@@ -105,7 +105,7 @@ describe("NFT collectionNFT", function () {
       passManager.target,
       passNFT.target,
       1,
-      hashedSignature,
+      hashedMessage,
       signature
     );
 
@@ -149,6 +149,8 @@ describe("NFT collectionNFT", function () {
 
     //Initialize genesis Colection traits
     await setupCharacterAttributes(collection);
+    const expectedToken =
+      '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78","67"],[["1","11",true,"24","0x0000000000000000000000000000000000000000000000000000000000000000"],["1","12",true,"94","0x0000000000000000000000000000000000000000000000000000000000000000"],["2","13",true,"2","0x0000000000000000000000000000000000000000000000000000000000000000"],["0","15",true,"4","0x0000000000000000000000000000000000000000000000000000000000000000"],["3","16",true,"0","0x924933f663f05df87c68961b46f17feaf61b47589e94f1c920c24030d8a63c4f"]]]';
 
     return {
       collection,
@@ -159,6 +161,7 @@ describe("NFT collectionNFT", function () {
       nftRandomManager,
       gameManager,
       passManager,
+      expectedToken,
     };
   }
 
@@ -205,6 +208,7 @@ describe("NFT collectionNFT", function () {
         mockCoordinator,
         nftRandomManager,
         gameManager,
+        expectedToken,
       } = await deployContracts();
 
       const result = await shopManager.getCollectionPrice(collectionNFT.target);
@@ -225,9 +229,7 @@ describe("NFT collectionNFT", function () {
       expect(
         nftJSONString,
         "Attributes expected different from the generated ones "
-      ).to.equal(
-        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
-      );
+      ).to.equal(expectedToken);
     });
 
     it("Shops/mint and rerolls trait", async function () {
@@ -239,6 +241,7 @@ describe("NFT collectionNFT", function () {
         mockCoordinator,
         nftRandomManager,
         gameManager,
+        expectedToken,
       } = await deployContracts();
 
       await shopManager.mintNFT(collectionNFT.target, `Token `, {
@@ -256,9 +259,7 @@ describe("NFT collectionNFT", function () {
       expect(
         nftJSONString,
         "Attributes expected different from the generated ones before reroll"
-      ).to.equal(
-        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
-      );
+      ).to.equal(expectedToken);
 
       //Rerol two traits
       await gameManager.rerollAttribute(collectionNFT, 0, 11);
@@ -267,13 +268,13 @@ describe("NFT collectionNFT", function () {
       nftJSON = await collectionNFT.getNFTDetails(0);
       nftJSONString = JSON.stringify(nftJSON, bigIntParser);
       //console.log(nftJSONString);
+      const expectedTokenAfterReroll =
+        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78","67"],[["1","11",true,"99","0x0000000000000000000000000000000000000000000000000000000000000000"],["1","12",true,"94","0x0000000000000000000000000000000000000000000000000000000000000000"],["2","13",true,"4","0x0000000000000000000000000000000000000000000000000000000000000000"],["0","15",true,"4","0x0000000000000000000000000000000000000000000000000000000000000000"],["3","16",true,"0","0x924933f663f05df87c68961b46f17feaf61b47589e94f1c920c24030d8a63c4f"]]]';
 
       expect(
         nftJSONString,
         "Attributes expected different from the generated ones after reroll"
-      ).to.equal(
-        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"99"],["1","12",true,"94"],["2","13",true,"4"],["0","15",true,"4"]]]'
-      );
+      ).to.equal(expectedTokenAfterReroll);
     });
 
     it("Mint nft for free", async function () {
@@ -284,6 +285,7 @@ describe("NFT collectionNFT", function () {
         shopManager,
         mockCoordinator,
         nftRandomManager,
+        expectedToken,
       } = await deployContracts();
 
       await collection.setCollectionAttributes(0, 0, 0);
@@ -304,9 +306,7 @@ describe("NFT collectionNFT", function () {
       expect(
         nftJSONString,
         "Attributes for gene should have strenght 100 and arms blue and weapon and"
-      ).to.equal(
-        '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78"],[["1","11",true,"24"],["1","12",true,"94"],["2","13",true,"2"],["0","15",true,"4"]]]'
-      );
+      ).to.equal(expectedToken);
     });
   });
 });
@@ -342,6 +342,8 @@ async function setupCharacterAttributes(collectionInstance) {
     ["Sword", "Axe", "Bow", "Spear", "Wand"],
     [10, 20, 30, 20, 20]
   );
+
+  await collectionInstance.addTextTrait(16, "TextTrait", 100, "Default Value");
 }
 
 const bigIntParser = (key, value) => {

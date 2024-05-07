@@ -35,6 +35,8 @@ interface ICollectionConfig {
 
 	function getTraitLabel(uint8 traitKeyId) external view returns (string memory);
 
+	function getTraitTextInitialValue(uint8 traitKeyId) external view returns (bytes32);
+
 	function getTraitKeyType(uint8 traitKeyId) external view returns (Types.TraitType);
 
 	function getTraitChance(uint8 traitKeyId) external view returns (uint8);

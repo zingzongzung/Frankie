@@ -6,7 +6,8 @@ library Types {
 	enum TraitType {
 		Options,
 		Number,
-		OptionsWithImage
+		OptionsWithImage,
+		Text
 	}
 
 	struct NFT {
@@ -22,6 +23,7 @@ library Types {
 		uint8 key;
 		bool isDefined;
 		uint32 value;
+		bytes32 textValue;
 	}
 
 	struct Pass {

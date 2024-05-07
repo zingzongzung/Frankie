@@ -20,6 +20,9 @@ module.exports = buildModule("Passes", (m) => {
     [100],
     [svgPass],
   ]);
+
+  //Add collection Name
+  //Add collection Address
   m.call(passConfig, "setCollectionAttributes", [0, 100, 100]);
 
   //Define Pass NFT

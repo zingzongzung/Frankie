@@ -74,8 +74,10 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		if (trait.isDefined) {
 			if (trait.traitType == Types.TraitType.Number) {
 				traitValue = keccak256(abi.encodePacked(trait.value));
-			} else {
+			} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
 				traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(collectionConfigTraitKey, trait.value)));
+			} else if (trait.traitType == Types.TraitType.Number) {
+				//traitValue = keccak256(abi.encodePacked(trait.textValue));
 			}
 		}
 	}
@@ -113,8 +115,10 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		bytes32 traitValue;
 		if (trait.traitType == Types.TraitType.Number) {
 			traitValue = keccak256(abi.encodePacked(trait.value));
-		} else {
+		} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
 			traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(trait.key, trait.value)));
+		} else if (trait.traitType == Types.TraitType.Number) {
+			//traitValue = keccak256(abi.encodePacked(trait.textValue));
 		}
 
 		emit TraitUpdated(traitKey, tokenId, traitValue);
@@ -153,7 +157,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function copy(Types.NFT storage target, Types.NFT memory origin) internal {
 		target.genes = origin.genes;
 		for (uint i = 0; i < origin.traits.length; i++) {
-			target.traits.push(Types.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value));
+			target.traits.push(Types.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value, origin.traits[i].textValue));
 		}
 
 		//To remove
