@@ -10,6 +10,8 @@ import "../../libraries/NumberUtils.sol";
 import "../../libraries/Roles.sol";
 import "./IERC7496.sol";
 
+import "./ICollectionNFT.sol";
+
 contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC721, IERC7496 {
 	using Strings for address;
 	using Strings for uint;
@@ -47,7 +49,9 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function generate(uint tokenId, uint genes) external override(ICollectionNFT, IRandomConsumer) onlyRole(Roles.NFT_RANDOM_MANAGER) {
 		copy(nfts[tokenId], collectionConfig.generateNFT(genes));
 
-		emit TraitMetadataURIUpdated();
+		if (tokenId == 0) {
+			emit TraitMetadataURIUpdated();
+		}
 	}
 
 	function getNFTDetails(uint256 tokenId) public view returns (Types.NFT memory) {
@@ -67,19 +71,18 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function _getTraitValue(uint256 tokenId, bytes32 traitKey) internal view returns (bytes32 traitValue) {
-		uint8 collectionConfigTraitKey = collectionConfig.getTraitIndexByKey(traitKey);
-		Types.NFT storage nft = nfts[tokenId];
-		Types.Trait memory trait = nft.traits[collectionConfigTraitKey];
-
-		if (trait.isDefined) {
-			if (trait.traitType == Types.TraitType.Number) {
-				traitValue = keccak256(abi.encodePacked(trait.value));
-			} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
-				traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(collectionConfigTraitKey, trait.value)));
-			} else if (trait.traitType == Types.TraitType.Number) {
-				//traitValue = keccak256(abi.encodePacked(trait.textValue));
-			}
-		}
+		// uint8 collectionConfigTraitKey = collectionConfig.getTraitIndexByKey(traitKey);
+		// Types.NFT storage nft = nfts[tokenId];
+		// Types.Trait memory trait = nft.traits[collectionConfigTraitKey];
+		// if (trait.isDefined) {
+		// 	if (trait.traitType == Types.TraitType.Number) {
+		// 		traitValue = keccak256(abi.encodePacked(trait.value));
+		// 	} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
+		// 		traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(collectionConfigTraitKey, trait.value)));
+		// 	} else if (trait.traitType == Types.TraitType.Number) {
+		// 		//traitValue = keccak256(abi.encodePacked(trait.textValue));
+		// 	}
+		// }
 	}
 
 	/** Dynamic NFT */
@@ -111,17 +114,17 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		Types.NFT storage myNft = nfts[tokenId];
 		myNft.traits[traitIndex] = trait;
 
-		bytes32 traitKey = keccak256(abi.encodePacked(collectionConfig.getTraitLabel(trait.key)));
-		bytes32 traitValue;
-		if (trait.traitType == Types.TraitType.Number) {
-			traitValue = keccak256(abi.encodePacked(trait.value));
-		} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
-			traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(trait.key, trait.value)));
-		} else if (trait.traitType == Types.TraitType.Number) {
-			//traitValue = keccak256(abi.encodePacked(trait.textValue));
-		}
+		// bytes32 traitKey = keccak256(abi.encodePacked(collectionConfig.getTraitLabel(trait.key)));
+		// bytes32 traitValue;
+		// if (trait.traitType == Types.TraitV2Type.Number) {
+		// 	traitValue = keccak256(abi.encodePacked(trait.value));
+		// } else if (trait.traitType == Types.TraitV2Type.Options || trait.traitType == Types.TraitV2Type.OptionsWithImage) {
+		// 	traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(trait.key, trait.value)));
+		// } else if (trait.traitType == Types.TraitV2Type.Number) {
+		// 	//traitValue = keccak256(abi.encodePacked(trait.textValue));
+		// }
 
-		emit TraitUpdated(traitKey, tokenId, traitValue);
+		// emit TraitUpdated(traitKey, tokenId, traitValue);
 	}
 
 	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {
@@ -157,7 +160,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function copy(Types.NFT storage target, Types.NFT memory origin) internal {
 		target.genes = origin.genes;
 		for (uint i = 0; i < origin.traits.length; i++) {
-			target.traits.push(Types.Trait(origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].isDefined, origin.traits[i].value, origin.traits[i].textValue));
+			target.traits.push(Types.Trait(origin.traits[i].isDefined, origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].value));
 		}
 
 		//To remove

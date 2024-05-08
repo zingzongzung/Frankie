@@ -99,7 +99,7 @@ describe("NFT collectionNFT", function () {
 
     //Deploy the collection
     const CollectionConfigFactory = await ethers.getContractFactory(
-      "CollectionConfigV2"
+      "CollectionConfig"
     );
     const collection = await CollectionConfigFactory.deploy(
       passManager.target,
@@ -119,7 +119,7 @@ describe("NFT collectionNFT", function () {
 
     //Deploy the NFT
     const CollectionNFTFactory = await ethers.getContractFactory(
-      "CollectionNFTV2"
+      "CollectionNFT"
     );
     const collectionNFT = await CollectionNFTFactory.deploy(
       collection.target,
@@ -149,9 +149,8 @@ describe("NFT collectionNFT", function () {
 
     //Initialize genesis Colection traits
     await setupCharacterAttributes(collection);
-    console.log("COLLECTION READY");
     const expectedToken =
-      '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78","67"],[["1","11",true,"24","0x0000000000000000000000000000000000000000000000000000000000000000"],["1","12",true,"94","0x0000000000000000000000000000000000000000000000000000000000000000"],["2","13",true,"2","0x0000000000000000000000000000000000000000000000000000000000000000"],["0","15",true,"4","0x0000000000000000000000000000000000000000000000000000000000000000"],["3","16",true,"0","0x924933f663f05df87c68961b46f17feaf61b47589e94f1c920c24030d8a63c4f"]]]';
+      '["Token ","23895781004589149129578100458914450004567867867856785990002450","0",["50","0","78","78","67"],[[true,"1","0x537472656e677468000000000000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000000000000000000000000018"],[true,"1","0x4465787465727479000000000000000000000000000000000000000000000000","0x000000000000000000000000000000000000000000000000000000000000005e"],[true,"2","0x41726d7300000000000000000000000000000000000000000000000000000000","0x59656c6c6f770000000000000000000000000000000000000000000000000000"],[true,"0","0x576561706f6e0000000000000000000000000000000000000000000000000000","0x466f726b00000000000000000000000000000000000000000000000000000000"],[true,"3","0x5465787454726169740000000000000000000000000000000000000000000000","0x44656661756c742056616c756500000000000000000000000000000000000000"]]]';
 
     return {
       collection,
@@ -167,6 +166,52 @@ describe("NFT collectionNFT", function () {
   }
 
   describe("Test Forge", function () {
+    it("Is able to get the token URI ", async function () {
+      const {
+        collection,
+        collectionNFT,
+        owner,
+        shopManager,
+        mockCoordinator,
+        nftRandomManager,
+        gameManager,
+        expectedToken,
+      } = await deployContracts();
+
+      await shopManager.mintNFT(collectionNFT.target, `Token `, {
+        value: ethers.parseEther("0.9999"),
+      });
+
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [23895781004589149129578100458914450004567867867856785990002450n]
+      );
+
+      const nftJSONAttributes = (await collectionNFT.getNFTDetails(0)).traits;
+
+      let nft = { traits: [] };
+      for (let i = 0; i < nftJSONAttributes.length; i++) {
+        const attribute = nftJSONAttributes[i];
+        if (attribute.isDefined) {
+          let traitLabel = bytes32ToString(attribute.key);
+          let traitValue;
+          if (attribute.traitType === 1n) {
+            traitValue = parseInt(attribute.value, 16);
+          } else {
+            traitValue = bytes32ToString(attribute.value);
+          }
+          nft.traits.push({ traitLabel, traitValue });
+        }
+      }
+      let result = JSON.stringify(nft);
+
+      let expetedResult =
+        '{"traits":[{"traitLabel":"Strength","traitValue":24},{"traitLabel":"Dexterty","traitValue":94},{"traitLabel":"Arms","traitValue":"Yellow"},{"traitLabel":"Weapon","traitValue":"Fork"},{"traitLabel":"TextTrait","traitValue":"Default Value"}]}';
+
+      expect(result, "The generated trait list is not as expected ").to.equal(
+        expetedResult
+      );
+    });
     it("Register some requests through a Single Game manager and process them when the upkeep runs", async function () {
       const AUTOMATION_MANAGER =
         "0x3b7a421a6643acf221d4c6271c18fc7dc0ca75864614a138bf7179c954253cc5";
@@ -331,18 +376,6 @@ function bytes32ToString(bytes) {
  */
 async function setupCharacterAttributes(collectionInstance) {
   await collectionInstance.setCollectionAttributes(3350, 0, 0);
-
-  console.log(
-    bytes32ToString(
-      "0x537472656e677468000000000000000000000000000000000000000000000000"
-    )
-  );
-  console.log(
-    parseInt(
-      "0x0000000000000000000000000000000000000000000000000000000000000018",
-      16
-    )
-  );
 
   let armsPinkSVG =
     "<g class='monster-left-arm'> <path id='Shape' d='M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z' transform='translate(-114.73)' style='fill: #df4d60' /></g><g class='monster-right-arm'> <path id='Shape-2' data-name='Shape' d='M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z' transform='translate(-114.73)' style='fill: #df4d60' /></g>";

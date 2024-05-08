@@ -24,24 +24,24 @@ contract GameManager is NFTManagerBase, IAutomationCallback {
 	function rerollAttribute(
 		address nftCollectionAddress,
 		uint256 tokenId,
-		uint8 traitKey
+		bytes32 traitKey
 	) external onlyAuthorizedCollections(nftCollectionAddress) returns (Types.Trait memory result) {
-		(ICollectionConfig collection, ICollectionNFT generator) = getCollection(nftCollectionAddress);
-		require(generator.getOwner(tokenId) == msg.sender, "This nft is not owned by the sender!");
+		(ICollectionConfig collection, ICollectionNFT collectionNFT) = getCollection(nftCollectionAddress);
+		require(collectionNFT.getOwner(tokenId) == msg.sender, "This nft is not owned by the sender!");
 
-		Types.NFT memory nft = generator.getNFTDetails(tokenId);
-		Types.TraitType traitType = collection.getTraitKeyType(traitKey);
+		Types.NFT memory nft = collectionNFT.getNFTDetails(tokenId);
 
 		uint8 numberOfTraits = collection.getNumberOfTraits();
 		for (uint8 index; index < numberOfTraits; index++) {
 			if (nft.traits[index].key == traitKey) {
+				Types.TraitType traitType = nft.traits[index].traitType;
 				if (traitType == Types.TraitType.Number) {
 					result = Generator.rollNumberTrait(collection, 99, traitKey);
 				}
 				if (traitType == Types.TraitType.Options || traitType == Types.TraitType.OptionsWithImage) {
 					result = Generator.rollOptionsTrait(collection, 99, traitKey, traitType);
 				}
-				generator.setTrait(tokenId, index, result);
+				collectionNFT.setTrait(tokenId, index, result);
 				break;
 			}
 		}

@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./ICollectionConfigV2.sol";
-import "../../libraries/GeneratorV2.sol";
+import "./ICollectionConfig.sol";
+import "../../libraries/Generator.sol";
 import "../../managers/nfts/PassManager.sol";
 
-contract CollectionConfigV2 is ICollectionConfigV2 {
-	//Pass Manager
-	Types.Pass pass;
-	PassManager passManager;
-
+abstract contract CollectionConfigBase is ICollectionConfig {
 	//Collection attributes
 	uint256 private collectionPrice;
 	uint16 private svgBoxHeight;
@@ -36,15 +32,6 @@ contract CollectionConfigV2 is ICollectionConfigV2 {
 	mapping(uint8 => bytes32) traitKeysByIndex;
 
 	bool isCollectionClosed;
-
-	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 originalMessage, bytes memory signature) {
-		passManager = PassManager(passManagerAddress);
-		//passManager.isAuthorizedV2(passAddress, passId, originalMessage, signature);
-		passManager.isAuthorized(passAddress, passId, originalMessage, signature);
-		isCollectionClosed = false;
-		pass = Types.Pass(passAddress, passId);
-		passManager.setPassUsed(passAddress, passId);
-	}
 
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
 		collectionPrice = _collectionPrice;
@@ -139,13 +126,11 @@ contract CollectionConfigV2 is ICollectionConfigV2 {
 		return traitsLength;
 	}
 
-	//IMPLENMENT
-	function getTraitValue(bytes32 traitKey) external view override returns (bytes32) {
-		Types.TraitType traitType = traitTypes[traitKey];
-		if (traitType == Types.TraitType.Number) {}
+	function getTraitTextValue(bytes32 traitKey) external view override returns (bytes32) {
+		return traitDefaultValue[traitKey];
 	}
 
-	function generateNFT(uint genes) external view override returns (Types.NFTV2 memory) {
-		return GeneratorV2.generateNFT(this, genes);
+	function generateNFT(uint genes) external view override returns (Types.NFT memory) {
+		return Generator.generateNFT(this, genes);
 	}
 }

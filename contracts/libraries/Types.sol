@@ -19,22 +19,6 @@ library Types {
 	}
 
 	struct Trait {
-		Types.TraitType traitType;
-		uint8 key;
-		bool isDefined;
-		uint32 value;
-		bytes32 textValue;
-	}
-
-	struct NFTV2 {
-		string name;
-		uint genes;
-		uint8 genesLength;
-		uint32[] chancesGene;
-		TraitV2[] traits;
-	}
-
-	struct TraitV2 {
 		bool isDefined;
 		Types.TraitType traitType;
 		bytes32 key;

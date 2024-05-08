@@ -36,7 +36,7 @@ contract MockCoordinator is VRFCoordinatorV2Interface {
 	function pendingRequestExists(uint64 subId) external view override returns (bool) {}
 
 	function mockVRFCoordinatorResponse(address vrfRequestorAddress, uint256[] calldata simulatedRandomWords) external {
-		VRFConsumerBaseV2 vrfConsumerBaseV2 = VRFConsumerBaseV2(vrfRequestorAddress);
-		vrfConsumerBaseV2.rawFulfillRandomWords(0, simulatedRandomWords);
+		VRFConsumerBaseV2 vrfConsumarBase = VRFConsumerBaseV2(vrfRequestorAddress);
+		vrfConsumarBase.rawFulfillRandomWords(0, simulatedRandomWords);
 	}
 }

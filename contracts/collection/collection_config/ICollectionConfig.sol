@@ -8,43 +8,34 @@ interface ICollectionConfig {
 
 	function getCollectionAttributes() external view returns (uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth);
 
-	function addOptionsTrait(uint8 traitKey, string memory traitLabel, uint8 traitChance, string[] memory valueLabels, uint8[] memory chances) external;
+	//Collection Creation
+	function addOptionsTrait(bytes32 traitKey, uint8 traitChance, bytes32[] memory valueLabels, uint8[] memory chances) external;
 
-	function addOptionsWithImageTrait(
-		uint8 traitKey,
-		string memory traitLabel,
-		uint8 traitChance,
-		string[] memory valueLabels,
-		uint8[] memory chances,
-		string[] memory images
-	) external;
+	function addOptionsWithImageTrait(bytes32 traitKey, uint8 traitChance, bytes32[] memory valueLabels, uint8[] memory chances, string[] memory images) external;
 
-	function addNumberTrait(uint8 traitKey, string memory traitLabel, uint8 traitChance, uint8 min, uint8 max) external;
+	function addNumberTrait(bytes32 traitKey, uint8 traitChance, uint8 min, uint8 max) external;
 
-	function getTraitNumberConfig(uint8 traitKeyId) external view returns (uint32 min, uint32 max);
+	function addTextTrait(bytes32 traitKey, uint8 traitChance, bytes32 defaultValue) external;
 
-	function getTraitOptionsLabel(uint8 traitKeyId, uint32 traitId) external view returns (string memory);
+	//Collection Generation
+	function getTraitKeyByIndex(uint8 traitIndex) external view returns (bytes32);
 
-	function getTraitOptionsImage(uint8 traitKeyId, uint32 traitId) external view returns (string memory result);
+	function getTraitType(bytes32 traitKey) external view returns (Types.TraitType);
 
-	function getNumberOfTraits() external view returns (uint8 numberOfTraits);
+	function getTraitChance(bytes32 traitKey) external view returns (uint8);
 
-	function getTraitOptionChances(uint8 traitKeyId) external view returns (uint8[] memory);
+	function getTraitNumberConfig(bytes32 traitKey) external view returns (uint32, uint32);
 
-	function getTraitLabel(uint8 traitKeyId) external view returns (string memory);
+	function getTraitOptionChances(bytes32 traitKey) external view returns (uint8[] memory);
 
-	function getTraitTextInitialValue(uint8 traitKeyId) external view returns (bytes32);
+	//Collection querying
+	function getNumberOfTraits() external view returns (uint8);
 
-	function getTraitKeyType(uint8 traitKeyId) external view returns (Types.TraitType);
+	function getTraitTextValue(bytes32 traitKey) external view returns (bytes32);
 
-	function getTraitChance(uint8 traitKeyId) external view returns (uint8);
+	function getTraitOptionsImage(bytes32 traitKey, uint32 traitId) external view returns (string memory);
 
-	function getTraitKeyByIndex(uint8 traitIndex) external view returns (uint8);
+	function getTraitOptionsLabel(bytes32 traitKey, uint32 traitId) external view returns (bytes32);
 
 	function generateNFT(uint genes) external view returns (Types.NFT memory);
-
-	function getTraitKeyByName(string memory traitName) external view returns (uint8);
-
-	//IERC7496
-	function getTraitIndexByKey(bytes32 traitKey) external view returns (uint8);
 }
