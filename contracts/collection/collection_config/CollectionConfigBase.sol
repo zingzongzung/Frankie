@@ -130,7 +130,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		return traitDefaultValue[traitKey];
 	}
 
-	function generateNFT(uint genes) external view override returns (Types.NFT memory) {
+	function generateNFT(uint genes) external view override returns (Types.Trait[] memory) {
 		return Generator.generateNFT(this, genes);
 	}
 }

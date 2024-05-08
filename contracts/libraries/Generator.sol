@@ -6,76 +6,79 @@ import "./NumberUtils.sol";
 import "./Types.sol";
 
 library Generator {
-	function generateNFT(ICollectionConfig myCollection, uint genes) internal view returns (Types.NFT memory) {
+	function generateNFT(ICollectionConfig myCollection, uint genes) internal view returns (Types.Trait[] memory result) {
 		//78 is the maximum length for the genes, when current position reaches 78, restart
 		uint8 genesIndex = 0;
 		Types.TraitType currentTraitType;
 		uint8 numberOfTraits = myCollection.getNumberOfTraits();
 		bool hasTrait;
 
-		Types.NFT memory result;
-		result.traits = new Types.Trait[](numberOfTraits);
-		result.chancesGene = new uint32[](numberOfTraits);
-
-		result.genes = genes;
-		result.genesLength = NumberUtils.countDigits(genes);
-
+		uint8 genesLength = NumberUtils.countDigits(genes);
 		bytes32 traitKey;
+
+		result = new Types.Trait[](numberOfTraits);
 
 		for (uint8 i; i < numberOfTraits; i++) {
 			traitKey = myCollection.getTraitKeyByIndex(i);
-			(uint32 chancesGene, ) = getChancesGene(genes, genesIndex, result.genesLength);
-			(hasTrait, genesIndex) = performTraitChanceCheck(genes, genesIndex, myCollection.getTraitChance(traitKey), result.genesLength);
+			(uint32 chancesGene, ) = getChancesGene(genes, genesIndex, genesLength);
+			(hasTrait, genesIndex) = performTraitChanceCheck(genes, genesIndex, myCollection.getTraitChance(traitKey), genesLength);
 
-			result.chancesGene[i] = chancesGene;
 			if (hasTrait) {
 				currentTraitType = myCollection.getTraitType(traitKey);
+				Types.Trait memory generatedTrait;
 				if (currentTraitType == Types.TraitType.Number) {
-					genesIndex = generateNumberTrait(myCollection, genesIndex, traitKey, result, i);
+					(genesIndex, generatedTrait) = generateNumberTrait(myCollection, genes, genesLength, genesIndex, traitKey);
 				} else if (currentTraitType == Types.TraitType.Options || currentTraitType == Types.TraitType.OptionsWithImage) {
-					genesIndex = generateOptionsTrait(myCollection, genesIndex, traitKey, result, i, currentTraitType);
+					(genesIndex, generatedTrait) = generateOptionsTrait(myCollection, genes, genesLength, genesIndex, traitKey, currentTraitType);
 				} else if (currentTraitType == Types.TraitType.Text) {
-					generateTextTrait(myCollection, genesIndex, traitKey, result, i);
+					generatedTrait = generateTextTrait(myCollection, traitKey);
 				}
+				result[i] = generatedTrait;
 			}
 		}
 
 		return result;
 	}
 
-	function generateNumberTrait(ICollectionConfig myCollection, uint8 genesIndex, bytes32 traitKey, Types.NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
+	function generateNumberTrait(
+		ICollectionConfig myCollection,
+		uint genes,
+		uint8 genesLength,
+		uint8 genesIndex,
+		bytes32 traitKey
+	) internal view returns (uint8, Types.Trait memory) {
 		uint32 traitValue;
 		uint32 traitNumberGenes;
 
 		(uint32 traitMin, uint32 traitMax) = myCollection.getTraitNumberConfig(traitKey);
-		(traitNumberGenes, genesIndex) = NumberUtils.extractDigits(myNft.genes, genesIndex, NumberUtils.countDigits(traitMax), myNft.genesLength);
+		(traitNumberGenes, genesIndex) = NumberUtils.extractDigits(genes, genesIndex, NumberUtils.countDigits(traitMax), genesLength);
 
 		traitValue = NumberUtils.mapToRange(traitMin, traitMax, traitNumberGenes);
-		myNft.traits[nftTraitIndex] = rollNumberTrait(myCollection, traitNumberGenes, traitKey);
+		Types.Trait memory trait = rollNumberTrait(myCollection, traitNumberGenes, traitKey);
 
-		return genesIndex;
+		return (genesIndex, trait);
 	}
 
-	function generateTextTrait(ICollectionConfig myCollection, uint8 genesIndex, bytes32 traitKey, Types.NFT memory myNft, uint8 nftTraitIndex) internal view returns (uint8) {
-		myNft.traits[nftTraitIndex] = Types.Trait(true, Types.TraitType.Text, traitKey, myCollection.getTraitTextValue(traitKey));
+	function generateTextTrait(ICollectionConfig myCollection, bytes32 traitKey) internal view returns (Types.Trait memory generatedTrait) {
+		generatedTrait = Types.Trait(true, Types.TraitType.Text, traitKey, myCollection.getTraitTextValue(traitKey));
 
-		return genesIndex;
+		return generatedTrait;
 	}
 
 	function generateOptionsTrait(
 		ICollectionConfig myCollection,
+		uint genes,
+		uint8 genesLength,
 		uint8 genesIndex,
 		bytes32 attrKey,
-		Types.NFT memory myNft,
-		uint8 nftTraitIndex,
 		Types.TraitType traitType
-	) internal view returns (uint8) {
+	) internal view returns (uint8, Types.Trait memory) {
 		uint32 chancesGene;
-		(chancesGene, genesIndex) = getChancesGene(myNft.genes, genesIndex, myNft.genesLength);
+		(chancesGene, genesIndex) = getChancesGene(genes, genesIndex, genesLength);
 
-		myNft.traits[nftTraitIndex] = rollOptionsTrait(myCollection, chancesGene, attrKey, traitType);
+		Types.Trait memory trait = rollOptionsTrait(myCollection, chancesGene, attrKey, traitType);
 
-		return genesIndex;
+		return (genesIndex, trait);
 	}
 
 	function rollNumberTrait(ICollectionConfig myCollection, uint32 traitNumberGenes, bytes32 traitKey) internal view returns (Types.Trait memory) {

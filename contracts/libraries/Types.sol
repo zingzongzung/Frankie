@@ -15,7 +15,6 @@ library Types {
 		uint genes;
 		uint8 genesLength;
 		uint32[] chancesGene;
-		Trait[] traits;
 	}
 
 	struct Trait {

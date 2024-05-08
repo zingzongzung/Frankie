@@ -37,5 +37,5 @@ interface ICollectionConfig {
 
 	function getTraitOptionsLabel(bytes32 traitKey, uint32 traitId) external view returns (bytes32);
 
-	function generateNFT(uint genes) external view returns (Types.NFT memory);
+	function generateNFT(uint genes) external view returns (Types.Trait[] memory);
 }

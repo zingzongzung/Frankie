@@ -20,7 +20,11 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	string private tokenURIBaseURL;
 
-	mapping(uint => Types.NFT) nfts;
+	mapping(uint => Types.NFT) nftDetails;
+	mapping(uint => mapping(bytes32 => Types.Trait)) nftTraits;
+	mapping(uint => mapping(uint => bytes32)) nftTraitsKeys;
+	mapping(uint => uint) nftTraitsSize;
+
 	uint public _nextTokenId;
 
 	constructor(
@@ -47,15 +51,32 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function generate(uint tokenId, uint genes) external override(ICollectionNFT, IRandomConsumer) onlyRole(Roles.NFT_RANDOM_MANAGER) {
-		copy(nfts[tokenId], collectionConfig.generateNFT(genes));
+		Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
+		nftTraitsSize[tokenId] = traits.length;
+		bytes32 currentTraitKey;
+		for (uint currentIndex = 0; currentIndex < traits.length; currentIndex++) {
+			currentTraitKey = traits[currentIndex].key;
+			nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
+			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
+		}
 
 		if (tokenId == 0) {
 			emit TraitMetadataURIUpdated();
 		}
 	}
 
-	function getNFTDetails(uint256 tokenId) public view returns (Types.NFT memory) {
-		return nfts[tokenId];
+	function getTraitByKey(uint256 tokenId, bytes32 traitKey) external view returns (Types.Trait memory traitValue) {
+		return nftTraits[tokenId][traitKey];
+	}
+
+	function getNFTDetails(uint256 tokenId) public view returns (Types.NFT memory, Types.Trait[] memory result) {
+		result = new Types.Trait[](nftTraitsSize[tokenId]);
+		bytes32 currentTraitKey;
+		for (uint currentIndex = 0; currentIndex < nftTraitsSize[tokenId]; currentIndex++) {
+			currentTraitKey = nftTraitsKeys[tokenId][currentIndex];
+			result[currentIndex] = nftTraits[tokenId][currentTraitKey];
+		}
+		return (nftDetails[tokenId], result);
 	}
 
 	function getCollectionAddress() external view returns (address) {
@@ -71,18 +92,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function _getTraitValue(uint256 tokenId, bytes32 traitKey) internal view returns (bytes32 traitValue) {
-		// uint8 collectionConfigTraitKey = collectionConfig.getTraitIndexByKey(traitKey);
-		// Types.NFT storage nft = nfts[tokenId];
-		// Types.Trait memory trait = nft.traits[collectionConfigTraitKey];
-		// if (trait.isDefined) {
-		// 	if (trait.traitType == Types.TraitType.Number) {
-		// 		traitValue = keccak256(abi.encodePacked(trait.value));
-		// 	} else if (trait.traitType == Types.TraitType.Options || trait.traitType == Types.TraitType.OptionsWithImage) {
-		// 		traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(collectionConfigTraitKey, trait.value)));
-		// 	} else if (trait.traitType == Types.TraitType.Number) {
-		// 		//traitValue = keccak256(abi.encodePacked(trait.textValue));
-		// 	}
-		// }
+		return nftTraits[tokenId][traitKey].value;
 	}
 
 	/** Dynamic NFT */
@@ -110,21 +120,9 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		return ownerOf(tokenId);
 	}
 
-	function setTrait(uint256 tokenId, uint256 traitIndex, Types.Trait memory trait) external override onlyRole(Roles.NFT_MANAGER) {
-		Types.NFT storage myNft = nfts[tokenId];
-		myNft.traits[traitIndex] = trait;
-
-		// bytes32 traitKey = keccak256(abi.encodePacked(collectionConfig.getTraitLabel(trait.key)));
-		// bytes32 traitValue;
-		// if (trait.traitType == Types.TraitV2Type.Number) {
-		// 	traitValue = keccak256(abi.encodePacked(trait.value));
-		// } else if (trait.traitType == Types.TraitV2Type.Options || trait.traitType == Types.TraitV2Type.OptionsWithImage) {
-		// 	traitValue = keccak256(abi.encodePacked(collectionConfig.getTraitOptionsLabel(trait.key, trait.value)));
-		// } else if (trait.traitType == Types.TraitV2Type.Number) {
-		// 	//traitValue = keccak256(abi.encodePacked(trait.textValue));
-		// }
-
-		// emit TraitUpdated(traitKey, tokenId, traitValue);
+	function setTrait(uint256 tokenId, bytes32 traitKey, Types.Trait memory trait) external override onlyRole(Roles.NFT_MANAGER) {
+		nftTraits[tokenId][traitKey] = trait;
+		emit TraitUpdated(traitKey, tokenId, trait.value);
 	}
 
 	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {
@@ -140,7 +138,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	//Internal Functions
 	function startRandomProcess(uint256 tokenId, string memory name) internal {
-		Types.NFT storage myNft = nfts[tokenId];
+		Types.NFT storage myNft = nftDetails[tokenId];
 		myNft.name = name;
 		requestRandom(address(this), tokenId);
 	}
@@ -157,15 +155,9 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		}
 	}
 
-	function copy(Types.NFT storage target, Types.NFT memory origin) internal {
-		target.genes = origin.genes;
-		for (uint i = 0; i < origin.traits.length; i++) {
-			target.traits.push(Types.Trait(origin.traits[i].isDefined, origin.traits[i].traitType, origin.traits[i].key, origin.traits[i].value));
-		}
-
-		//To remove
-		for (uint i = 0; i < origin.traits.length; i++) {
-			target.chancesGene.push(origin.chancesGene[i]);
+	function copy(Types.Trait[] storage target, Types.Trait[] memory origin) internal {
+		for (uint i = 0; i < origin.length; i++) {
+			target.push(Types.Trait(origin[i].isDefined, origin[i].traitType, origin[i].key, origin[i].value));
 		}
 	}
 }

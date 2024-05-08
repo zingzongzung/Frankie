@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./../collection_config/ICollectionConfig.sol";
 
 interface ICollectionNFT is IAccessControl, IERC721 {
-	function getNFTDetails(uint256 tokenId) external view returns (Types.NFT memory);
+	function getNFTDetails(uint256 tokenId) external view returns (Types.NFT memory, Types.Trait[] memory);
 
 	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external;
 
@@ -31,5 +31,7 @@ interface ICollectionNFT is IAccessControl, IERC721 {
 
 	function getOwner(uint tokenId) external view returns (address);
 
-	function setTrait(uint256 tokenId, uint256 traitIndex, Types.Trait memory trait) external;
+	function getTraitByKey(uint256 tokenId, bytes32 traitKey) external view returns (Types.Trait memory traitValue);
+
+	function setTrait(uint256 tokenId, bytes32 traitKey, Types.Trait memory trait) external;
 }
