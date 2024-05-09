@@ -18,9 +18,9 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal onlyAuthorizedCollections(nftCollectionAddress) {
-		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
+		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
 
-		generator.safeMint(msg.sender, nftName);
+		collection.safeMint(msg.sender, nftName);
 	}
 
 	function addManagedCollection(address nftCollectionAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -37,9 +37,12 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	//internal
-	function getCollection(address nftCollectionAddress) internal view returns (ICollectionConfig collection, ICollectionNFT generator) {
-		generator = ICollectionNFT(nftCollectionAddress);
-		collection = ICollectionConfig(generator.getCollectionAddress());
+	function getCollectionContract(address nftCollectionAddress) internal pure returns (ICollectionNFT collection) {
+		collection = ICollectionNFT(nftCollectionAddress);
+	}
+
+	function getCollectionConfigContract(ICollectionNFT collection) internal view returns (ICollectionConfig collectionConfig) {
+		collectionConfig = ICollectionConfig(collection.getCollectionAddress());
 	}
 
 	modifier onlyAuthorizedCollections(address nftCollectionAddress) {

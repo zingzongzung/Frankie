@@ -8,12 +8,15 @@ import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.so
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "../../libraries/Types.sol";
+import "../../libraries/Constants.sol";
+import "../../libraries/Utils.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract PassManager is NFTManagerBase {
 	using ECDSA for bytes32;
 	AggregatorV3Interface internal dataFeed;
 
-	mapping(address => uint[]) passIdsUsed;
+	//mapping(address => uint[]) passIdsUsed;
 
 	constructor(address AvaxToUSDAggregatorAddress) NFTManagerBase() {
 		dataFeed = AggregatorV3Interface(AvaxToUSDAggregatorAddress);
@@ -33,8 +36,14 @@ contract PassManager is NFTManagerBase {
 		return avaxWeiNeeded;
 	}
 
-	function setPassUsed(address nftCollectionAddress, uint passId) external onlyAuthorizedCollections(nftCollectionAddress) {
-		passIdsUsed[nftCollectionAddress].push(passId);
+	function setPassUsed(address passAddress, uint passId, bytes32 collectionName) external onlyAuthorizedCollections(passAddress) {
+		ICollectionNFT collection = getCollectionContract(passAddress);
+		collection.setTrait(passId, Constants.PASS_COLLECTION_LABEL, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_LABEL, collectionName));
+		collection.setTrait(
+			passId,
+			Constants.PASS_COLLECTION_ADDRESS_LABEL,
+			Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_ADDRESS_LABEL, bytes32(abi.encodePacked(passAddress)))
+		);
 	}
 
 	function getCollectionPrice(address nftCollectionAddress) external view onlyAuthorizedCollections(nftCollectionAddress) returns (uint256) {
@@ -42,8 +51,8 @@ contract PassManager is NFTManagerBase {
 	}
 
 	function _getCollectionPrice(address nftCollectionAddress) internal view returns (uint256 priceInAvaxToken) {
-		(ICollectionConfig collection, ) = getCollection(nftCollectionAddress);
-		(uint256 price, , ) = collection.getCollectionAttributes();
+		ICollectionConfig collectionConfig = getCollectionConfigContract(getCollectionContract(nftCollectionAddress));
+		(uint256 price, , ) = collectionConfig.getCollectionAttributes();
 		if (price > 0) {
 			priceInAvaxToken = usdToAvaxToken(price);
 			// require(msg.value >= tokenAmount(), "Not enough funds sent!");
@@ -65,12 +74,6 @@ contract PassManager is NFTManagerBase {
 	}
 
 	modifier verifyPassValidity(address nftCollectionAddress, uint tokenId) {
-		uint[] memory passesUsed = passIdsUsed[nftCollectionAddress];
-		for (uint index; index < passesUsed.length; index++) {
-			if (passesUsed[index] == tokenId) {
-				revert("This pass has been used already");
-			}
-		}
 		_;
 	}
 
@@ -80,8 +83,11 @@ contract PassManager is NFTManagerBase {
 		bytes32 originalMessage,
 		bytes memory signature
 	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
-		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
-		address passOwner = generator.getOwner(tokenId);
+		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
+		if (bytes32(0) != collection.getTraitValue(tokenId, Constants.PASS_COLLECTION_LABEL)) {
+			revert("This pass has been used already");
+		}
+		address passOwner = collection.getOwner(tokenId);
 		bool isSignatureVerified = originalMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");
@@ -90,13 +96,15 @@ contract PassManager is NFTManagerBase {
 	function isAuthorizedV2(
 		address nftCollectionAddress,
 		uint tokenId,
-		string memory originalMessage,
+		//string memory originalMessage,
+		bytes32 originalMessage,
 		bytes memory signature
 	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
-		(, ICollectionNFT generator) = getCollection(nftCollectionAddress);
-		address passOwner = generator.getOwner(tokenId);
+		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
+		address passOwner = collection.getOwner(tokenId);
 
-		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(bytes(originalMessage));
+		// bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(bytes(originalMessage));
+		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(originalMessage);
 		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");

@@ -2,17 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../../managers/random/RandomConsumerBase.sol";
-import "../../libraries/NumberUtils.sol";
-import "../../libraries/Roles.sol";
-import "./IERC7496.sol";
 
 import "./ICollectionNFT.sol";
 
-contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC721, IERC7496 {
+contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC721 {
 	using Strings for address;
 	using Strings for uint;
 
@@ -58,10 +52,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			currentTraitKey = traits[currentIndex].key;
 			nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
 			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
-		}
-
-		if (tokenId == 0) {
-			emit TraitMetadataURIUpdated();
+			emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
 		}
 	}
 
@@ -88,22 +79,18 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
-		return string(abi.encodePacked(tokenURIBaseURL, "/GetTokenURI", address(this).toHexString(), "/", tokenId.toString(), "/", address(collectionConfig).toHexString()));
-	}
-
-	function _getTraitValue(uint256 tokenId, bytes32 traitKey) internal view returns (bytes32 traitValue) {
-		return nftTraits[tokenId][traitKey].value;
+		return string(abi.encodePacked(tokenURIBaseURL, "/GetTokenURI/", address(this).toHexString(), "/", tokenId.toString(), "/", address(collectionConfig).toHexString()));
 	}
 
 	/** Dynamic NFT */
 	function getTraitValue(uint256 tokenId, bytes32 traitKey) external view returns (bytes32 traitValue) {
-		return _getTraitValue(tokenId, traitKey);
+		return nftTraits[tokenId][traitKey].value;
 	}
 
 	function getTraitValues(uint256 tokenId, bytes32[] calldata traitKeys) external view returns (bytes32[] memory traitValues) {
 		traitValues = new bytes32[](traitKeys.length);
 		for (uint i; i < traitKeys.length; i++) {
-			traitValues[i] = _getTraitValue(tokenId, traitKeys[i]);
+			traitValues[i] = nftTraits[tokenId][traitKeys[i]].value;
 		}
 	}
 

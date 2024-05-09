@@ -7,9 +7,10 @@ import "../../managers/nfts/PassManager.sol";
 
 abstract contract CollectionConfigBase is ICollectionConfig {
 	//Collection attributes
-	uint256 private collectionPrice;
-	uint16 private svgBoxHeight;
-	uint16 private svgBoxWidth;
+	bytes32 collectionName;
+	uint256 collectionPrice;
+	uint16 svgBoxHeight;
+	uint16 svgBoxWidth;
 
 	//This represents all the collectionTraits that can be part of an NFT
 	uint8 traitsLength;
@@ -32,6 +33,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	mapping(uint8 => bytes32) traitKeysByIndex;
 
 	bool isCollectionClosed;
+	bool needsRandom;
 
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
 		collectionPrice = _collectionPrice;
@@ -84,13 +86,13 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		traitOptionLabels[traitKey] = valueLabels;
 	}
 
-	function addNumberTrait(bytes32 traitKey, uint8 traitChance, uint8 min, uint8 max) external override addBaseTrait(traitKey, Types.TraitType.Number, traitChance) {
+	function addNumberTrait(bytes32 traitKey, uint8 traitChance, uint8 min, uint8 max) public override addBaseTrait(traitKey, Types.TraitType.Number, traitChance) {
 		require(min <= max, "Min should be less than max");
 		traitNumberMin[traitKey] = min;
 		traitNumberMax[traitKey] = max;
 	}
 
-	function addTextTrait(bytes32 traitKey, uint8 traitChance, bytes32 defaultValue) external override addBaseTrait(traitKey, Types.TraitType.Text, traitChance) {
+	function addTextTrait(bytes32 traitKey, uint8 traitChance, bytes32 defaultValue) public override addBaseTrait(traitKey, Types.TraitType.Text, traitChance) {
 		traitDefaultValue[traitKey] = defaultValue;
 	}
 

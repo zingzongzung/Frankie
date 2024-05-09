@@ -10,12 +10,13 @@ contract CollectionConfig is CollectionConfigBase {
 	Types.Pass pass;
 	PassManager passManager;
 
-	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 originalMessage, bytes memory signature) {
+	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 hashedMessage, bytes memory signature, bytes32 _collectionName) {
 		passManager = PassManager(passManagerAddress);
-		//passManager.isAuthorizedV2(passAddress, passId, originalMessage, signature);
-		passManager.isAuthorized(passAddress, passId, originalMessage, signature);
+		passManager.isAuthorized(passAddress, passId, hashedMessage, signature);
+		// passManager.isAuthorizedV2(passAddress, passId, _collectionName, signature);
 		isCollectionClosed = false;
+		collectionName = _collectionName;
 		pass = Types.Pass(passAddress, passId);
-		passManager.setPassUsed(passAddress, passId);
+		passManager.setPassUsed(passAddress, passId, _collectionName);
 	}
 }

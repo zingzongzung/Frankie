@@ -4,8 +4,9 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./../collection_config/ICollectionConfig.sol";
+import "./IERC7496.sol";
 
-interface ICollectionNFT is IAccessControl, IERC721 {
+interface ICollectionNFT is IAccessControl, IERC721, IERC7496 {
 	function getNFTDetails(uint256 tokenId) external view returns (Types.NFT memory, Types.Trait[] memory);
 
 	function setTokenURIBaseURL(string calldata _tokenURIBaseURL) external;

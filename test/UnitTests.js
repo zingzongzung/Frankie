@@ -1,6 +1,7 @@
 const {} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { string } = require("hardhat/internal/core/params/argumentTypes");
 
 //npx hardhat test ./test/genesisNFT.js
 describe("NFT collectionNFT", function () {
@@ -40,10 +41,6 @@ describe("NFT collectionNFT", function () {
     const ShopManager = await ethers.getContractFactory("ShopManager");
     const shopManager = await ShopManager.deploy(mockAggregatorAVAX_USD.target);
 
-    //Deploy the pass configuration,
-    const PassConfigFactory = await ethers.getContractFactory("PassConfig");
-    const passConfig = await PassConfigFactory.deploy();
-
     //Deploy the game manager,
     const AutomationManager = await ethers.getContractFactory(
       "AutomationManager"
@@ -58,6 +55,11 @@ describe("NFT collectionNFT", function () {
     const PassManager = await ethers.getContractFactory("PassManager");
     const passManager = await PassManager.deploy(mockAggregatorAVAX_USD.target);
 
+    //Deploy the pass configuration,
+    const PassConfigFactory = await ethers.getContractFactory("PassConfig");
+    const passConfig = await PassConfigFactory.deploy();
+    await passConfig.setCollectionAttributes(0, 0, 0);
+
     //Prepare a Pass and mint one for the user
     //Deploy the NFT
     const PassNFTFactory = await ethers.getContractFactory("CollectionNFT");
@@ -68,6 +70,7 @@ describe("NFT collectionNFT", function () {
       "Pass NFT",
       "Pass"
     );
+
     //Grant necessary permissions to the pass manager to our new pass
     await passManager.addManagedCollection(passNFT.target);
     await passNFT.grantRole(NFT_MANAGER, passManager.target);
@@ -77,20 +80,8 @@ describe("NFT collectionNFT", function () {
     await nftRandomManager.grantRole(NFT_RANDOM_MANAGER_ROLE, passNFT.target);
     await passNFT.grantRole(NFT_RANDOM_MANAGER_ROLE, nftRandomManager.target);
 
-    //Mint a pass for otherAccount
-    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 0");
-
     //Mint a pass for owner
     await passManager.mintNFT(passNFT.target, "Pass 1");
-
-    //Mint a pass for otherAccount
-    await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
-
-    //Mint a pass for owner
-    await passManager.mintNFT(passNFT.target, "Pass 3");
-
-    // console.log(await passNFT.getTokensOwnedBy(owner));
-    // console.log(await passNFT.getTokensOwnedBy(otherAccount));
 
     const TEST_MESSAGE = "Example";
 
@@ -104,9 +95,10 @@ describe("NFT collectionNFT", function () {
     const collection = await CollectionConfigFactory.deploy(
       passManager.target,
       passNFT.target,
-      1,
+      0,
       hashedMessage,
-      signature
+      signature,
+      stringToBytes32("Ninjas of Sydney")
     );
 
     // const collection2 = await CollectionConfigFactory.deploy(
@@ -156,16 +148,103 @@ describe("NFT collectionNFT", function () {
       collection,
       collectionNFT,
       owner,
+      otherAccount,
       shopManager,
       mockCoordinator,
       nftRandomManager,
       gameManager,
       passManager,
       expectedToken,
+      passNFT,
+      passConfig,
+      CollectionConfigFactory,
     };
   }
 
   describe("Test Forge", function () {
+    it("Mints a Pass and updates it once collection is minted", async function () {
+      const {
+        passManager,
+        passNFT,
+        passConfig,
+        otherAccount,
+        CollectionConfigFactory,
+        nftRandomManager,
+        mockCoordinator,
+      } = await deployContracts();
+
+      const collectionName = "Samurais of Sydney";
+      let initialCollectionValue, finalCollectionValue;
+      let initialCollectionAddressValue, finalCollectionAddressValue;
+
+      const knownFields = await passConfig.getKnownFields();
+
+      //Mint a pass for otherAccount
+      await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
+      initialCollectionValue = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionLabel)
+      );
+      console.log(initialCollectionValue);
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [23895781004589149129578100458914450004567867867856785990002450n]
+      );
+
+      initialCollectionValue = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionLabel)
+      );
+      initialCollectionAddressValue = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionAddressLabel)
+      );
+
+      const samuraisCollectionName = stringToBytes32("Samurais of Sydney");
+
+      //Sign a message
+      const TEST_MESSAGE = "Samurais of Sydney";
+      const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
+      const signature = await otherAccount.signMessage(TEST_MESSAGE);
+
+      await CollectionConfigFactory.deploy(
+        passManager.target,
+        passNFT.target,
+        1,
+        hashedMessage,
+        signature,
+        samuraisCollectionName
+      );
+
+      finalCollectionValue = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionLabel)
+      );
+
+      finalCollectionAddressValue = await passNFT.getTraitValue(
+        1,
+        knownFields.collectionAddressLabel
+      );
+
+      finalCollectionAddressValue = finalCollectionAddressValue.replace(
+        /0+$/,
+        ""
+      );
+
+      expect(
+        initialCollectionValue,
+        "The initial collection value for pass collection is not empty "
+      ).to.equal("");
+      expect(
+        finalCollectionValue,
+        "The initial collection value for pass collection should have value "
+      ).to.equal(collectionName);
+
+      expect(
+        initialCollectionValue,
+        "The initial collection address value for pass collection is not empty "
+      ).to.equal("");
+      expect(
+        finalCollectionAddressValue.toLowerCase(),
+        "The initial collection address value for pass collection should have value "
+      ).to.equal(passNFT.target.toLowerCase());
+    });
     it("Is able to get the token URI ", async function () {
       const {
         collection,
@@ -176,6 +255,7 @@ describe("NFT collectionNFT", function () {
         nftRandomManager,
         gameManager,
         expectedToken,
+        passNFT,
       } = await deployContracts();
 
       await shopManager.mintNFT(collectionNFT.target, `Token `, {
@@ -426,6 +506,13 @@ async function setupCharacterAttributes(collectionInstance) {
     100,
     stringToBytes32("Default Value")
   );
+}
+
+function bytes32ToAddressWeb3(bytes32) {
+  // Directly take the last 40 characters
+  const addressPart = bytes32;
+  // Web3.js can handle this directly, assuming the instance is web3
+  return addressPart; // Depending on your needs, prepend '0x'
 }
 
 const bigIntParser = (key, value) => {

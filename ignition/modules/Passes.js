@@ -10,16 +10,6 @@ module.exports = buildModule("Passes", (m) => {
 
   //Define Pass Configuration
   const passConfig = m.contract("PassConfig");
-  const svgPass =
-    '<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="80" height="30" fill="lightgray" stroke="black" stroke-width="2" rx="5" /><text x="30" y="30" font-family="Arial" font-size="12" fill="black">PASS</text></svg>';
-  m.call(passConfig, "addOptionsWithImageTrait", [
-    0,
-    "Season",
-    100,
-    ["Genesis"],
-    [100],
-    [svgPass],
-  ]);
 
   //Add collection Name
   //Add collection Address
@@ -31,7 +21,7 @@ module.exports = buildModule("Passes", (m) => {
     [
       passConfig,
       nftRandomManager,
-      "https://personal-ixqe4210.outsystemscloud.com/NFTMaker_API/rest/Token/GetTokenURI",
+      "https://personal-ixqe4210.outsystemscloud.com/NFTMaker_API/rest/Token",
       "NFT Forge Pass",
       "NFP",
     ],
@@ -54,6 +44,9 @@ module.exports = buildModule("Passes", (m) => {
   });
 
   m.call(passManager, "mintNFT", [passNFT, "Pass 1"]);
+  m.call(passManager, "mintNFT", [passNFT, "Pass 2"], {
+    id: "mintAnotherPass",
+  });
 
   return { passNFT };
 });

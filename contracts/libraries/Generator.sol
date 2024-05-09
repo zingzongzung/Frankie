@@ -20,7 +20,6 @@ library Generator {
 
 		for (uint8 i; i < numberOfTraits; i++) {
 			traitKey = myCollection.getTraitKeyByIndex(i);
-			(uint32 chancesGene, ) = getChancesGene(genes, genesIndex, genesLength);
 			(hasTrait, genesIndex) = performTraitChanceCheck(genes, genesIndex, myCollection.getTraitChance(traitKey), genesLength);
 
 			if (hasTrait) {

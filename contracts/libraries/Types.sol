@@ -10,6 +10,7 @@ library Types {
 		Text
 	}
 
+	//SHouldnt this be just a list of traits
 	struct NFT {
 		string name;
 		uint genes;

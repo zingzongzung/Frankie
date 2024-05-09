@@ -32,8 +32,8 @@ contract ShopManager is NFTManagerBase {
 	}
 
 	function _getCollectionPrice(address nftCollectionAddress) internal view returns (uint256 priceInAvaxToken) {
-		(ICollectionConfig collection, ) = getCollection(nftCollectionAddress);
-		(uint256 price, , ) = collection.getCollectionAttributes();
+		ICollectionConfig collectionConfig = getCollectionConfigContract(getCollectionContract(nftCollectionAddress));
+		(uint256 price, , ) = collectionConfig.getCollectionAttributes();
 		if (price > 0) {
 			priceInAvaxToken = usdToAvaxToken(price);
 			// require(msg.value >= tokenAmount(), "Not enough funds sent!");

@@ -26,18 +26,19 @@ contract GameManager is NFTManagerBase, IAutomationCallback {
 		uint256 tokenId,
 		bytes32 traitKey
 	) external onlyAuthorizedCollections(nftCollectionAddress) returns (Types.Trait memory result) {
-		(ICollectionConfig collection, ICollectionNFT collectionNFT) = getCollection(nftCollectionAddress);
-		require(collectionNFT.getOwner(tokenId) == msg.sender, "This nft is not owned by the sender!");
+		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
+		ICollectionConfig collectionConfig = getCollectionConfigContract(collection);
+		require(collection.getOwner(tokenId) == msg.sender, "This nft is not owned by the sender!");
 
-		Types.Trait memory trait = collectionNFT.getTraitByKey(tokenId, traitKey);
+		Types.Trait memory trait = collection.getTraitByKey(tokenId, traitKey);
 		Types.TraitType traitType = trait.traitType;
 		if (traitType == Types.TraitType.Number) {
-			result = Generator.rollNumberTrait(collection, 99, traitKey);
+			result = Generator.rollNumberTrait(collectionConfig, 99, traitKey);
 		}
 		if (traitType == Types.TraitType.Options || traitType == Types.TraitType.OptionsWithImage) {
-			result = Generator.rollOptionsTrait(collection, 99, traitKey, traitType);
+			result = Generator.rollOptionsTrait(collectionConfig, 99, traitKey, traitType);
 		}
-		collectionNFT.setTrait(tokenId, traitKey, result);
+		collection.setTrait(tokenId, traitKey, result);
 	}
 
 	function testeRegisterNewAutomation() external {
