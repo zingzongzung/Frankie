@@ -2,6 +2,8 @@
 pragma solidity ^0.8.24;
 
 library NumberUtils {
+	uint8 constant UINT256_SAFE_TRESHOLD = 76;
+
 	/**
 	 *
 	 * Used to get the number to multiply by the origin digit to create origin genes composed
@@ -33,7 +35,7 @@ library NumberUtils {
 	}
 
 	function getNextGenePosition(uint8 currentPosition, uint8 treshold, uint8 digitCount) internal pure returns (uint8 genePosition) {
-		if (currentPosition >= treshold) {
+		if (currentPosition + digitCount >= treshold) {
 			genePosition = 0;
 		} else {
 			genePosition = currentPosition + digitCount;
@@ -41,15 +43,12 @@ library NumberUtils {
 	}
 
 	function extractDigits(uint number, uint8 position, uint8 digitCount, uint8 treshold) internal pure returns (uint32, uint8) {
-		require(digitCount > 0, "Digit count must be greater than zero");
-
 		// Calculate divisor to isolate desired digits
 		uint divisor = 10 ** (position + digitCount);
-
 		// Divide the number to isolate the desired digits
 		uint32 extractedNumber = uint32((number % divisor) / (10 ** position));
 
-		return (extractedNumber, getNextGenePosition(position, treshold, digitCount));
+		return (extractedNumber, getNextGenePosition(position, treshold < UINT256_SAFE_TRESHOLD ? treshold : UINT256_SAFE_TRESHOLD, digitCount));
 	}
 
 	function countDigits(uint value) internal pure returns (uint8) {

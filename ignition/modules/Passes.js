@@ -47,6 +47,12 @@ module.exports = buildModule("Passes", (m) => {
   m.call(passManager, "mintNFT", [passNFT, "Pass 2"], {
     id: "mintAnotherPass",
   });
+  m.call(passManager, "mintNFT", [passNFT, "Pass 3"], {
+    id: "mintAnotherPasss",
+  });
+  m.call(passManager, "mintNFT", [passNFT, "Pass 4"], {
+    id: "mintPass4",
+  });
 
   return { passNFT };
 });

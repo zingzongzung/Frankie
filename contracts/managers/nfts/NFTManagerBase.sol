@@ -23,7 +23,7 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 		collection.safeMint(msg.sender, nftName);
 	}
 
-	function addManagedCollection(address nftCollectionAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+	function addManagedCollection(address nftCollectionAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
 		managedCollectionGenerators.push(nftCollectionAddress);
 		managedCollectionGeneratorsIndex[nftCollectionAddress] = 1;
 	}

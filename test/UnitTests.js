@@ -5,6 +5,15 @@ const { string } = require("hardhat/internal/core/params/argumentTypes");
 
 //npx hardhat test ./test/genesisNFT.js
 describe("NFT collectionNFT", function () {
+  async function deploySurfGame() {
+    const [owner, otherAccount] = await ethers.getSigners();
+
+    const SurfGame = await ethers.getContractFactory("SurfGame");
+    const surfGame = await SurfGame.deploy();
+
+    return { surfGame };
+  }
+
   async function deployContracts() {
     const [owner, otherAccount] = await ethers.getSigners();
 
@@ -82,7 +91,6 @@ describe("NFT collectionNFT", function () {
 
     //Mint a pass for owner
     await passManager.mintNFT(passNFT.target, "Pass 1");
-
     const TEST_MESSAGE = "Example";
 
     const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
@@ -506,13 +514,6 @@ async function setupCharacterAttributes(collectionInstance) {
     100,
     stringToBytes32("Default Value")
   );
-}
-
-function bytes32ToAddressWeb3(bytes32) {
-  // Directly take the last 40 characters
-  const addressPart = bytes32;
-  // Web3.js can handle this directly, assuming the instance is web3
-  return addressPart; // Depending on your needs, prepend '0x'
 }
 
 const bigIntParser = (key, value) => {

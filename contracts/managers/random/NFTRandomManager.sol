@@ -19,7 +19,6 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 	struct RequestStatus {
 		bool fulfilled; // whether the request has been successfully fulfilled
 		bool exists; // whether a requestId exists
-		uint256[] randomWords;
 		address requestor;
 		uint256 tokenId;
 	}
@@ -47,12 +46,12 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 		keyHash = _keyHash;
 	}
 
-	function requestRandomWords(address requestor, uint256 tokenId) external onlyRole(Roles.NFT_RANDOM_MANAGER) returns (uint256 requestId) {
+	function requestRandomWords(address requestor, uint256 tokenId, uint8 _numWords) external onlyRole(Roles.NFT_RANDOM_MANAGER) returns (uint256 requestId) {
 		// Will revert if subscription is not set and funded.
-		requestId = COORDINATOR.requestRandomWords(keyHash, s_subscriptionId, requestConfirmations, callbackGasLimit, numWords);
-		s_requests[requestId] = RequestStatus({randomWords: new uint256[](0), exists: true, fulfilled: false, requestor: requestor, tokenId: tokenId});
+		requestId = COORDINATOR.requestRandomWords(keyHash, s_subscriptionId, requestConfirmations, callbackGasLimit, _numWords);
+		s_requests[requestId] = RequestStatus({exists: true, fulfilled: false, requestor: requestor, tokenId: tokenId});
 		requestIds.push(requestId);
-		emit RequestSent(requestId, numWords);
+		emit RequestSent(requestId, _numWords);
 
 		return requestId;
 	}
@@ -60,9 +59,8 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 	function fulfillRandomWords(uint256 _requestId /* requestId */, uint256[] memory _randomWords) internal override {
 		require(s_requests[_requestId].exists, "request not found");
 		s_requests[_requestId].fulfilled = true;
-		s_requests[_requestId].randomWords = _randomWords;
 		nftGenerator = ICollectionNFT(s_requests[_requestId].requestor);
-		nftGenerator.generate(s_requests[_requestId].tokenId, _randomWords[0]);
+		nftGenerator.generate(s_requests[_requestId].tokenId, _randomWords);
 	}
 
 	function getRequest(uint256 _requestId) external view returns (RequestStatus memory rs) {

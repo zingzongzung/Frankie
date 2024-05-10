@@ -44,7 +44,8 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		_nextTokenId++;
 	}
 
-	function generate(uint tokenId, uint genes) external override(ICollectionNFT, IRandomConsumer) onlyRole(Roles.NFT_RANDOM_MANAGER) {
+	function generate(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
+		uint256 genes = randomWords[0];
 		Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
 		nftTraitsSize[tokenId] = traits.length;
 		bytes32 currentTraitKey;
@@ -127,7 +128,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function startRandomProcess(uint256 tokenId, string memory name) internal {
 		Types.NFT storage myNft = nftDetails[tokenId];
 		myNft.name = name;
-		requestRandom(address(this), tokenId);
+		requestRandom(address(this), tokenId, 1);
 	}
 
 	function tokenOfOwnerByIndex(address owner, uint startIndex) internal view returns (uint256) {
