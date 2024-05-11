@@ -44,7 +44,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		_nextTokenId++;
 	}
 
-	function generate(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
+	function handleVRFResponse(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
 		uint256 genes = randomWords[0];
 		Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
 		nftTraitsSize[tokenId] = traits.length;

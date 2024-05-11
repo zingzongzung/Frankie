@@ -60,7 +60,7 @@ contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 		require(s_requests[_requestId].exists, "request not found");
 		s_requests[_requestId].fulfilled = true;
 		nftGenerator = ICollectionNFT(s_requests[_requestId].requestor);
-		nftGenerator.generate(s_requests[_requestId].tokenId, _randomWords);
+		nftGenerator.handleVRFResponse(s_requests[_requestId].tokenId, _randomWords);
 	}
 
 	function getRequest(uint256 _requestId) external view returns (RequestStatus memory rs) {
