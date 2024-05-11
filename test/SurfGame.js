@@ -37,7 +37,7 @@ describe("Surf Game", function () {
     } = await deployCollection(
       0,
       "Surfers of Sydney",
-      setupCharacterAttributes,
+      null,
       nftRandomManager,
       shopManager,
       gameManager,
@@ -51,8 +51,8 @@ describe("Surf Game", function () {
       collectionNFT: surfBoardCollectionNFT,
     } = await deployCollection(
       1,
-      "Surfers of Sydney",
-      setupCharacterAttributes,
+      "Surboards of Sydney",
+      null,
       nftRandomManager,
       shopManager,
       gameManager,
@@ -74,6 +74,7 @@ describe("Surf Game", function () {
       nftRandomManager,
       surfCollectionNFT,
       surfBoardCollectionNFT,
+      shopManager,
     };
   }
 
@@ -115,7 +116,29 @@ describe("Surf Game", function () {
     //   });
     //   console.log(`Log Length: ${logs.length}`);
     // });
+    it("Fails to add surfer that is not owned", async function () {
+      const {
+        surfGame,
+        mockCoordinator,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
 
+      const [owner, otherAccount] = await ethers.getSigners();
+
+      await shopManager
+        .connect(otherAccount)
+        .mintNFT(surfCollectionNFT, "Surfer ");
+      await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
+      // await surfGame.addSurferToQueue(
+      //   surfCollectionNFT.target,
+      //   0,
+      //   surfBoardCollectionNFT.target,
+      //   0
+      // );
+    });
     it("Gets waves seeds from random and process game", async function () {
       const {
         surfGame,
@@ -123,14 +146,21 @@ describe("Surf Game", function () {
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
+        shopManager,
       } = await deployContracts();
 
-      await surfGame.addSurferToQueue(
-        surfCollectionNFT.target,
-        0,
-        surfBoardCollectionNFT.target,
-        0
-      );
+      const numberOfSurfers = 5;
+
+      for (let i = 0; i < numberOfSurfers; i++) {
+        await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
+        await shopManager.mintNFT(surfBoardCollectionNFT, "Board " + i);
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          i,
+          surfBoardCollectionNFT.target,
+          i
+        );
+      }
 
       await mockCoordinator.mockVRFCoordinatorResponse(
         nftRandomManager.target,

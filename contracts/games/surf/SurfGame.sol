@@ -84,6 +84,11 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 		address surfBoardAddress,
 		uint256 surfboardId
 	) external onlyAuthorizedCollections(surferAddress) onlyAuthorizedCollections(surfBoardAddress) {
+		ICollectionNFT surferNFT = ICollectionNFT(surferAddress);
+		ICollectionNFT surfBoard = ICollectionNFT(surfBoardAddress);
+		if (msg.sender != surferNFT.getOwner(surferId) || msg.sender != surfBoard.getOwner(surfboardId)) {
+			revert("Not owner of these nfts");
+		}
 		addToSurfQueue(SurfTypes.Surfer(surferAddress, surferId, surfBoardAddress, surfboardId));
 		requestWaveSeedsIfNeeded();
 	}
