@@ -10,8 +10,6 @@ import "../../collection/collection_nft/ICollectionNFT.sol";
 import "./INFTManager.sol";
 
 abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {
-	//Just for display purposes and to help during development
-	address[] managedCollectionGenerators;
 	mapping(address => bool) managedCollections;
 
 	constructor() {
@@ -25,12 +23,11 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	function addManagedCollection(address nftCollectionAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
-		managedCollectionGenerators.push(nftCollectionAddress);
 		managedCollections[nftCollectionAddress] = true;
 	}
 
-	function getManagedCollections() external view returns (address[] memory) {
-		return managedCollectionGenerators;
+	function isCollectionManaged(address nftCollectionAddress) external view returns (bool) {
+		return managedCollections[nftCollectionAddress];
 	}
 
 	function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
