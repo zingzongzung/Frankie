@@ -162,6 +162,7 @@ describe("Surf Game", function () {
         );
       }
 
+      //Simulates the response of a wave request
       await mockCoordinator.mockVRFCoordinatorResponse(
         nftRandomManager.target,
         [
@@ -169,6 +170,33 @@ describe("Surf Game", function () {
           22223344010101010101010101010101010101010101010101010101010101010101010101055n,
         ]
       );
+
+      //Should be called by the automation
+      await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+      await surfGame.runGame(); //Process wave 2 + 2 elements in the queue
+
+      //Simulates the response of a wave request
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [
+          23895781004589149129578100458914450004564864664856305970002450n,
+          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+        ]
+      );
+
+      await surfGame.runGame(); //Process wave 3 + 2 elements in the queue
+
+      const logs = await surfGame.getSurferLogs(surfCollectionNFT.target, 4);
+      logs.forEach((log) => {
+        console.log(
+          `Action: ${ethers.decodeBytes32String(
+            log.actionName
+          )} Current Speed: ${log.currentSpeed} Current Score: ${
+            log.currentScore
+          }`
+        );
+      });
+      console.log(`Log Length: ${logs.length}`);
     });
   });
 });

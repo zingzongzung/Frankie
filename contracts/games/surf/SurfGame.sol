@@ -42,6 +42,10 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 		addManagedCollection(surferCollectionAddress);
 	}
 
+	function getSurferLogs(address surferAddress, uint256 tokenId) external view onlyAuthorizedCollections(surferAddress) returns (SurfTypes.RunLog[] memory) {
+		return surferLogs[surferAddress][tokenId];
+	}
+
 	/**
 	 * Set wave will be set daily by the integration with Weather Forecast API
 	 */
@@ -68,10 +72,15 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 		if (canRun()) {
 			uint256 waveSeed = getAvailableWaveSeed();
 			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
-			while (queueProcessLength >= 0) {
+			while (queueProcessLength > 0) {
 				SurfTypes.Surfer memory surfer = getFromSurfQueue();
+				console.log(surfer.surferId);
 				doRun(waveSeed, surfer.surferAddress, surfer.surferId);
 				queueProcessLength--;
+			}
+			//Check if needs more waves
+			if (!isSurfQueueEmpty()) {
+				requestWaveSeedsIfNeeded();
 			}
 		} else {
 			console.log("didnt run");

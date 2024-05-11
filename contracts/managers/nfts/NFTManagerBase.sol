@@ -10,14 +10,15 @@ import "../../collection/collection_nft/ICollectionNFT.sol";
 import "./INFTManager.sol";
 
 abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {
+	//Just for display purposes and to help during development
 	address[] managedCollectionGenerators;
-	mapping(address => uint8) managedCollectionGeneratorsIndex;
+	mapping(address => bool) managedCollections;
 
 	constructor() {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 	}
 
-	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal onlyAuthorizedCollections(nftCollectionAddress) {
+	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal {
 		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
 
 		collection.safeMint(msg.sender, nftName);
@@ -25,7 +26,7 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 
 	function addManagedCollection(address nftCollectionAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
 		managedCollectionGenerators.push(nftCollectionAddress);
-		managedCollectionGeneratorsIndex[nftCollectionAddress] = 1;
+		managedCollections[nftCollectionAddress] = true;
 	}
 
 	function getManagedCollections() external view returns (address[] memory) {
@@ -46,7 +47,7 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	modifier onlyAuthorizedCollections(address nftCollectionAddress) {
-		require(managedCollectionGeneratorsIndex[nftCollectionAddress] == 1, "This collection is not managed by this");
+		require(managedCollections[nftCollectionAddress], "This collection is not managed by this");
 		_;
 	}
 }

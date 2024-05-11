@@ -151,8 +151,13 @@ describe("NFT collectionNFT", function () {
       ).to.equal(passNFT.target.toLowerCase());
     });
     it("Is able to get the token URI ", async function () {
-      const { collectionNFT, shopManager, mockCoordinator, nftRandomManager } =
-        await deployContracts();
+      const {
+        collectionNFT,
+        shopManager,
+        mockCoordinator,
+        nftRandomManager,
+        collection,
+      } = await deployContracts();
 
       await shopManager.mintNFT(collectionNFT.target, `Token `, {
         value: ethers.parseEther("0.9999"),
@@ -171,18 +176,24 @@ describe("NFT collectionNFT", function () {
         if (attribute.isDefined) {
           let traitLabel = bytes32ToString(attribute.key);
           let traitValue;
+          let traitImage;
           if (attribute.traitType === 1n) {
             traitValue = parseInt(attribute.value, 16);
           } else {
             traitValue = bytes32ToString(attribute.value);
+            if (attribute.traitType === 2n) {
+              traitImage = await collection.getTraitOptionsImage(
+                attribute.key,
+                attribute.value
+              );
+            }
           }
-          nft.traits.push({ traitLabel, traitValue });
+          nft.traits.push({ traitLabel, traitValue, traitImage });
         }
       }
       let result = JSON.stringify(nft);
-
       let expetedResult =
-        '{"traits":[{"traitLabel":"Strength","traitValue":24},{"traitLabel":"Dexterty","traitValue":94},{"traitLabel":"Arms","traitValue":"Yellow"},{"traitLabel":"Weapon","traitValue":"Fork"},{"traitLabel":"TextTrait","traitValue":"Default Value"}]}';
+        '{"traits":[{"traitLabel":"Strength","traitValue":24},{"traitLabel":"Dexterty","traitValue":94},{"traitLabel":"Arms","traitValue":"Yellow","traitImage":"<g class=\'monster-left-arm-yellow\'> <path id=\'Shape\' d=\'M200.78,257.08s-51.7,3.15-81.17,62.67a40,40,0,0,0,.71,39.55c10.43,16.16,35.17,24.25,94.31-38.9Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g><g class=\'monster-right-arm\'> <path id=\'Shape-2\' data-name=\'Shape\' d=\'M311.22,257.08c0,.05,51.71,3.17,81.21,62.67a40,40,0,0,1-.71,39.55c-10.17,15.77-34,23.83-90-34.43Z\' transform=\'translate(-114.73)\' style=\'fill: #df4d60\' /></g>"},{"traitLabel":"Weapon","traitValue":"Fork"},{"traitLabel":"TextTrait","traitValue":"Default Value"}]}';
 
       expect(result, "The generated trait list is not as expected ").to.equal(
         expetedResult

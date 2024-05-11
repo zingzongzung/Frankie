@@ -33,7 +33,7 @@ interface ICollectionConfig {
 
 	function getTraitTextValue(bytes32 traitKey) external view returns (bytes32);
 
-	function getTraitOptionsImage(bytes32 traitKey, uint32 traitId) external view returns (string memory);
+	function getTraitOptionsImage(bytes32 traitKey, bytes32 traitValue) external view returns (string memory);
 
 	function getTraitOptionsLabel(bytes32 traitKey, uint32 traitId) external view returns (bytes32);
 

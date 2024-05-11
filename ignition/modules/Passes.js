@@ -43,16 +43,16 @@ module.exports = buildModule("Passes", (m) => {
     id: "grantRole_randomManager_on_PassNFT_to_nftRandomManager",
   });
 
-  m.call(passManager, "mintNFT", [passNFT, "Pass 1"]);
-  m.call(passManager, "mintNFT", [passNFT, "Pass 2"], {
-    id: "mintAnotherPass",
-  });
-  m.call(passManager, "mintNFT", [passNFT, "Pass 3"], {
-    id: "mintAnotherPasss",
-  });
-  m.call(passManager, "mintNFT", [passNFT, "Pass 4"], {
-    id: "mintPass4",
-  });
+  // m.call(passManager, "mintNFT", [passNFT, "Pass 1"]);
+  // m.call(passManager, "mintNFT", [passNFT, "Pass 2"], {
+  //   id: "mintAnotherPass",
+  // });
+  // m.call(passManager, "mintNFT", [passNFT, "Pass 3"], {
+  //   id: "mintAnotherPasss",
+  // });
+  // m.call(passManager, "mintNFT", [passNFT, "Pass 4"], {
+  //   id: "mintPass4",
+  // });
 
   return { passNFT };
 });

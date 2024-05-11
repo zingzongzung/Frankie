@@ -20,7 +20,8 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	//Array Types
 	mapping(bytes32 => bytes32[]) traitOptionLabels;
 	mapping(bytes32 => uint8[]) traitOptionChances;
-	mapping(bytes32 => string[]) traitOptionImages;
+	//mapping(bytes32 => string[]) traitOptionImages;
+	mapping(bytes32 => mapping(bytes32 => string)) traitOptionImages;
 
 	//Number Types
 	mapping(bytes32 => uint32) traitNumberMin;
@@ -81,7 +82,10 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	) public override addBaseTrait(traitKey, Types.TraitType.OptionsWithImage, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(NumberUtils.sum(chances) == 100);
-		traitOptionImages[traitKey] = images;
+		for (uint256 currentIndex; currentIndex < valueLabels.length; currentIndex++) {
+			traitOptionImages[traitKey][valueLabels[currentIndex]] = images[currentIndex];
+		}
+
 		traitOptionChances[traitKey] = chances;
 		traitOptionLabels[traitKey] = valueLabels;
 	}
@@ -116,8 +120,8 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		return traitOptionChances[traitKey];
 	}
 
-	function getTraitOptionsImage(bytes32 traitKey, uint32 traitId) external view override returns (string memory) {
-		return traitOptionImages[traitKey][traitId];
+	function getTraitOptionsImage(bytes32 traitKey, bytes32 traitValue) external view override returns (string memory) {
+		return traitOptionImages[traitKey][traitValue];
 	}
 
 	function getTraitOptionsLabel(bytes32 traitKey, uint32 traitId) external view override returns (bytes32) {
