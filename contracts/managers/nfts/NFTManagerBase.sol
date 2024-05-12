@@ -7,9 +7,11 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "../../collection/collection_nft/ICollectionNFT.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./INFTManager.sol";
 
 abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {
+	using Strings for address;
 	mapping(address => bool) managedCollections;
 
 	constructor() {
@@ -44,7 +46,7 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	modifier onlyAuthorizedCollections(address nftCollectionAddress) {
-		require(managedCollections[nftCollectionAddress], "This collection is not managed by this");
+		require(managedCollections[nftCollectionAddress], string(abi.encodePacked("Collection not managed: ", nftCollectionAddress.toHexString())));
 		_;
 	}
 }

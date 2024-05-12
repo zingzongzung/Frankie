@@ -1,7 +1,7 @@
 const {} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { string } = require("hardhat/internal/core/params/argumentTypes");
+const { string, json } = require("hardhat/internal/core/params/argumentTypes");
 
 const {
   deployContractsInfrastructure,
@@ -79,43 +79,11 @@ describe("Surf Game", function () {
   }
 
   describe("Test Game Loop", function () {
-    // it("Test a direct run ", async function () {
-    //   const { surfGame } = await deployContracts();
-
-    //   await surfGame.doRun(
-    //     23895781004589149129578100458914450004564864664856305970002450n
-    //   );
-
-    //   let logs = await surfGame.getRun(0);
-    //   console.log("Run 1");
-    //   logs.forEach((log) => {
-    //     console.log(
-    //       `Action: ${ethers.decodeBytes32String(
-    //         log.actionName
-    //       )} Current Speed: ${log.currentSpeed} Current Score: ${
-    //         log.currentScore
-    //       }`
-    //     );
-    //   });
-    //   console.log(`Log Length: ${logs.length}`);
-
-    //   console.log("Run 2");
-    //   await surfGame.doRun(
-    //     22223344010101010101010101010101010101010101010101010101010101010101010101055n
-    //   );
-
-    //   logs = await surfGame.getRun(1);
-    //   logs.forEach((log) => {
-    //     console.log(
-    //       `Action: ${ethers.decodeBytes32String(
-    //         log.actionName
-    //       )} Current Speed: ${log.currentSpeed} Current Score: ${
-    //         log.currentScore
-    //       }`
-    //     );
-    //   });
-    //   console.log(`Log Length: ${logs.length}`);
-    // });
+    /**
+     *
+     * Verify ownership on game play
+     *
+     */
     it("Fails to add surfer that is not owned", async function () {
       const {
         surfGame,
@@ -132,13 +100,208 @@ describe("Surf Game", function () {
         .connect(otherAccount)
         .mintNFT(surfCollectionNFT, "Surfer ");
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
-      // await surfGame.addSurferToQueue(
-      //   surfCollectionNFT.target,
-      //   0,
-      //   surfBoardCollectionNFT.target,
-      //   0
-      // );
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          0,
+          surfBoardCollectionNFT.target,
+          0
+        );
+      };
+
+      await expect(addToQueueFunction()).to.be.revertedWith(
+        "Not owner of the NFT"
+      );
     });
+    /**
+     *
+     * Tests Surfer only added once to the queue at any given time
+     *
+     */
+    it("Add surfer only once", async function () {
+      const {
+        surfGame,
+        mockCoordinator,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
+
+      await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
+      await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          0,
+          surfBoardCollectionNFT.target,
+          0
+        );
+      };
+
+      await addToQueueFunction();
+
+      await expect(addToQueueFunction()).to.be.revertedWith(
+        "Surfer is already queued"
+      );
+    });
+    /**
+     *
+     * Tests Surfer can be added again after getting out of the queue
+     *
+     */
+    it("Add surfer to queue again after the game has run", async function () {
+      const {
+        surfGame,
+        mockCoordinator,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
+
+      await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
+      await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          0,
+          surfBoardCollectionNFT.target,
+          0
+        );
+      };
+      await addToQueueFunction();
+
+      //Simulates the game running (Response from VRF + automation runing the game loop)
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [
+          23895781004589149129578100458914450004564864664856305970002450n,
+          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+        ]
+      );
+      await surfGame.runGame();
+
+      await expect(addToQueueFunction()).to.not.be.reverted;
+    });
+    /**
+     *
+     * The queue position of a surfer in a  first run and in a second run is different
+     *
+     */
+    it("The queue position of a surfer in a  first run and in a second run is different", async function () {
+      const {
+        surfGame,
+        mockCoordinator,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
+
+      const numberOfSurfers = 5;
+      const surferTokenId = 1;
+      const queueOffset = 1;
+      const firstRunSurferPosition = surferTokenId + queueOffset;
+      const secondRunSurferPosition = numberOfSurfers + queueOffset;
+
+      const getSurferQueuePosition = async () => {
+        return await surfGame.getSurferQueuePosition(
+          surfCollectionNFT.target,
+          surferTokenId
+        );
+      };
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          surferTokenId,
+          surfBoardCollectionNFT.target,
+          surferTokenId
+        );
+      };
+
+      let surferPosition = await getSurferQueuePosition();
+      expect(surferPosition).to.equal(0);
+
+      for (let i = 0; i < numberOfSurfers; i++) {
+        await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
+        await shopManager.mintNFT(surfBoardCollectionNFT, "Board " + i);
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          i,
+          surfBoardCollectionNFT.target,
+          i
+        );
+      }
+
+      surferPosition = await getSurferQueuePosition();
+      expect(surferPosition).to.equal(firstRunSurferPosition);
+
+      //Simulates the game running (Response from VRF + automation runing the game loop)
+      await mockCoordinator.mockVRFCoordinatorResponse(
+        nftRandomManager.target,
+        [
+          23895781004589149129578100458914450004564864664856305970002450n,
+          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+        ]
+      );
+      await surfGame.runGame();
+
+      await addToQueueFunction();
+      surferPosition = await getSurferQueuePosition();
+      expect(surferPosition).to.equal(secondRunSurferPosition);
+    });
+    /**
+     *
+     * Can get the surfer object at a specific position
+     *
+     */
+    it("Can get the surfer object at a specific position", async function () {
+      const {
+        surfGame,
+        mockCoordinator,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
+
+      await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
+      await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          0,
+          surfBoardCollectionNFT.target,
+          0
+        );
+      };
+      await addToQueueFunction();
+
+      const getSurferQueuePosition = async () => {
+        return await surfGame.getSurferQueuePosition(
+          surfCollectionNFT.target,
+          0
+        );
+      };
+
+      const result = await surfGame.getSurferAtPosition(
+        await getSurferQueuePosition()
+      );
+      expect(JSON.stringify(result, bigIntParser)).to.equal(
+        '["0x54B8d8E2455946f2A5B8982283f2359812e815ce","0","0xccf1769D8713099172642EB55DDFFC0c5A444FE9","0"]'
+      );
+    });
+    /**
+     *
+     * Test used to validate concepts
+     *
+     */
     it("Gets waves seeds from random and process game", async function () {
       const {
         surfGame,
@@ -162,6 +325,8 @@ describe("Surf Game", function () {
         );
       }
 
+      // console.log(await surfGame.queueStatus());
+
       //Simulates the response of a wave request
       await mockCoordinator.mockVRFCoordinatorResponse(
         nftRandomManager.target,
@@ -170,7 +335,6 @@ describe("Surf Game", function () {
           22223344010101010101010101010101010101010101010101010101010101010101010101055n,
         ]
       );
-
       //Should be called by the automation
       await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
       await surfGame.runGame(); //Process wave 2 + 2 elements in the queue
@@ -186,17 +350,21 @@ describe("Surf Game", function () {
 
       await surfGame.runGame(); //Process wave 3 + 2 elements in the queue
 
-      const logs = await surfGame.getSurferLogs(surfCollectionNFT.target, 4);
-      logs.forEach((log) => {
-        console.log(
-          `Action: ${ethers.decodeBytes32String(
-            log.actionName
-          )} Current Speed: ${log.currentSpeed} Current Score: ${
-            log.currentScore
-          }`
-        );
-      });
-      console.log(`Log Length: ${logs.length}`);
+      // const logs = await surfGame.getSurferLogs(surfCollectionNFT.target, 4);
+      // logs.forEach((log) => {
+      //   console.log(
+      //     `Action: ${ethers.decodeBytes32String(
+      //       log.actionName
+      //     )} Current Speed: ${log.currentSpeed} Current Score: ${
+      //       log.currentScore
+      //     }`
+      //   );
+      // });
+      // console.log(`Log Length: ${logs.length}`);
     });
   });
 });
+
+const bigIntParser = (key, value) => {
+  return typeof value === "bigint" ? value.toString() : value;
+};

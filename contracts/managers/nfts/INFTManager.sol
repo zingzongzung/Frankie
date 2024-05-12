@@ -6,7 +6,7 @@ import "../../libraries/Types.sol";
 interface INFTManager {
 	function addManagedCollection(address nftCollectionAddress) external;
 
-	function getManagedCollections() external view returns (address[] memory);
+	function isCollectionManaged(address nftCollectionAddress) external view returns (bool);
 
 	function withdraw() external;
 }

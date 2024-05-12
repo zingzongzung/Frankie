@@ -27,6 +27,19 @@ abstract contract SurferQueue {
 		return front > back;
 	}
 
+	function getQueueFront() public view returns (uint256) {
+		return front;
+	}
+
+	function getQueueBack() public view returns (uint256) {
+		return back;
+	}
+
+	function getSurferAtPosition(uint256 position) public view returns (SurfTypes.Surfer memory) {
+		require(position >= front && position <= back, "This position is not queued");
+		return surferQueue[position];
+	}
+
 	function getQueueLength() public view returns (uint256 length) {
 		if (front > back) {
 			length = 0;
