@@ -61,8 +61,18 @@ describe("Surf Game", function () {
       passNFT
     );
 
+    const SurfForecastService = await ethers.getContractFactory(
+      "SurfForecastService"
+    );
+    const surfForecastService = await SurfForecastService.deploy(
+      /* should be cooredinater address */ passManager.target
+    );
+
     const SurfGame = await ethers.getContractFactory("SurfGame");
-    const surfGame = await SurfGame.deploy(nftRandomManager.target);
+    const surfGame = await SurfGame.deploy(
+      nftRandomManager.target,
+      surfForecastService.target
+    );
 
     await grantRandomManagerRoles(nftRandomManager, surfGame);
     await addManagedCollectionToNFTManager(surfGame, surfCollectionNFT);
@@ -77,6 +87,23 @@ describe("Surf Game", function () {
       shopManager,
     };
   }
+
+  describe("Test Parser", function () {
+    /**
+     *
+     * Test Parser
+     *
+     */
+    it("Test Parser", async function () {
+      const { surfGame } = await deployContracts();
+
+      const exampleResponse = ethers.toUtf8Bytes("310031001");
+
+      const parsedResult = await surfGame.testParser(exampleResponse);
+
+      console.log(parsedResult);
+    });
+  });
 
   describe("Test Game Loop", function () {
     /**
@@ -293,8 +320,10 @@ describe("Surf Game", function () {
       const result = await surfGame.getSurferAtPosition(
         await getSurferQueuePosition()
       );
-      expect(JSON.stringify(result, bigIntParser)).to.equal(
-        '["0x54B8d8E2455946f2A5B8982283f2359812e815ce","0","0xccf1769D8713099172642EB55DDFFC0c5A444FE9","0"]'
+
+      const expectedResult = `["${surfCollectionNFT.target}","0","${surfBoardCollectionNFT.target}","0"]`;
+      expect(JSON.stringify(result, bigIntParser).toLowerCase()).to.equal(
+        expectedResult.toLowerCase()
       );
     });
     /**

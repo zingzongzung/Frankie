@@ -1,8 +1,0 @@
-{
-  "RandomManager#VRFCoordinatorV2Interface": "0x2eD832Ba664535e5886b75D64C46EB9a228C2610",
-  "PassManager#PassManager": "0x9913Db173e37A83B047a163Ae1FD62334bc70d4e",
-  "Passes#PassConfig": "0x4e91990A640DF5670bE78a4B53b1E3d68c344B6A",
-  "RandomManager#NFTRandomManager": "0xc0Adb641F61b0C239450D18c20CE4712475aaC7d",
-  "Passes#PassNFT": "0xA7e8784D7F7B230f834FB1338dD4e0D9a4748128",
-  "ShopManager#ShopManager": "0x7B97C839D9bA327F72cb8dF7D3139de5Eb2a39e6"
-}

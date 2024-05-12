@@ -1,5 +1,10 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { functions, roles, admins } = require("./Configurations.json");
+const {
+  functions,
+  roles,
+  admins,
+  deployerAddress,
+} = require("./Configurations.json");
 
 //npx hardhat ignition deploy ignition/modules/SurfForecastService.js --network fuji --reset
 module.exports = buildModule("SurfForecastService", (m) => {
@@ -7,22 +12,26 @@ module.exports = buildModule("SurfForecastService", (m) => {
     functions.routerAddress,
   ]);
 
-  admins.forEach((adminAddress, i) => {
-    //Grant Admin Roles
-    m.call(
-      surfForecastService,
-      "grantRole",
-      [roles.defaultAdmin, adminAddress],
-      {
-        id: `grantRole_Admin${i}`,
-      }
-    );
-  });
-  const data = ethers.toUtf8Bytes(functions.encryptedSecretsUrls);
+  m.call(surfForecastService, "grantRole", [
+    roles.surfForecastConsumer,
+    deployerAddress,
+  ]);
+
+  // admins.forEach((adminAddress, i) => {
+  //   //Grant Admin Roles
+  //   m.call(
+  //     surfForecastService,
+  //     "grantRole",
+  //     [roles.defaultAdmin, adminAddress],
+  //     {
+  //       id: `grantRole_Admin${i}`,
+  //     }
+  //   );
+  // });
 
   m.call(surfForecastService, "setForecastServiceConfig", [
     functions.source,
-    data,
+    ethers.hexlify(functions.encryptedSecretsUrls),
     functions.gasLimit,
     ethers.encodeBytes32String(functions.donName),
     functions.subscriptionId,

@@ -8,10 +8,10 @@
     "routerAddress": "0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0",
     "donID": "0x66756e2d6176616c616e6368652d66756a692d31000000000000000000000000",
     "donName": "fun-avalanche-fuji-1",
-    "source": "",
+    "source": "return Functions.encodeString('1001001100');",
     "gasLimit": 300000,
     "subscriptionId": 7815,
-    "encryptedSecretsUrls": ""
+    "encryptedSecretsUrls": "0xc7cc9f9b0033ca88471796d37051ac56027625b19812defe0021fb199847206a07a4b22d1e24932b08197bf456bc32ce2cc214a94ade819bc65f66f3746bb2616029a085fb3901bf973b69dbb94dc3bd21abc86616cf4e190b0c7dac2eadd84fc59c52eee461cd51d355326574b1e504f13359dc02f593210d9af6d1423efa7f20ea477844f4b3ad087834e9dcc049d869"
   },
   "priceFeed": {
     "AvaxUSD": "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"
@@ -22,5 +22,6 @@
     "defaultAdmin": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "surfForecastConsumer": "0x8794dbefcad8d057429a8e6212647fab37fefb070924aa9c4fd35ba03144892b"
   },
+  "deployerAddress": "0xeB1A1f54f0db797ffcfa1E59d93711A75d742c4d",
   "admins": ["0x30ed1a5FB009d6B68EEf3099239727604541bAd4"]
 }

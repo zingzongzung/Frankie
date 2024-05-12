@@ -9,10 +9,12 @@ import "./SurfTypes.sol";
 import "./SurferQueue.sol";
 import "hardhat/console.sol";
 import "./Functions/SurfForecastServiceConsumer.sol";
+import "../../libraries/BytesToValue.sol";
 
 contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForecastServiceConsumer {
 	SurfTypes.SurfWave currentWave;
 	SurfTypes.RunLog[] waveLog;
+	using BytesToValue for bytes;
 
 	mapping(address => ICollectionNFT) surfboardCollections;
 	mapping(address => ICollectionNFT) surferCollections;
@@ -234,6 +236,13 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		if (waveSeeds.length == 0) {
 			requestRandom(address(this), 0, MAX_RANDOM_WORDS);
 		}
+	}
+
+	function testParser(bytes memory data) external pure returns (uint256 result_a, uint256 result_b, bool result_c) {
+		uint256 startPos = 0;
+		(result_a, startPos) = data.toUint_Dynamic(startPos);
+		(result_b, startPos) = data.toUint_Dynamic(startPos);
+		(result_c, startPos) = data.toBool(startPos);
 	}
 
 	function handleForecastServiceResponse(bytes32 requestId, bytes memory response) external override {
