@@ -8,8 +8,9 @@ import "../../libraries/NumberUtils.sol";
 import "./SurfTypes.sol";
 import "./SurferQueue.sol";
 import "hardhat/console.sol";
+import "./Functions/SurfForecastServiceConsumer.sol";
 
-contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
+contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForecastServiceConsumer {
 	SurfTypes.SurfWave currentWave;
 	SurfTypes.RunLog[] waveLog;
 
@@ -27,7 +28,10 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 	mapping(address => mapping(uint256 => uint256)) surferRunsLength;
 	mapping(address => mapping(uint256 => uint256)) surferQueuePosition;
 
-	constructor(address randomManager) NFTManagerBase() RandomConsumerBase(randomManager) {
+	constructor(
+		address randomManager,
+		address surfForecastServiceAddress
+	) NFTManagerBase() RandomConsumerBase(randomManager) SurfForecastServiceConsumer(surfForecastServiceAddress) {
 		setWave();
 		setActionDistribution();
 	}
@@ -48,13 +52,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 	}
 
 	function getSurferRunHistory() external view {}
-
-	/**
-	 * Set wave will be set daily by the integration with Weather Forecast API
-	 */
-	function setWave() internal {
-		currentWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
-	}
 
 	function setActionDistribution() internal {
 		actionChances = [20, 20, 10, 10, 10, 30];
@@ -237,5 +234,16 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue {
 		if (waveSeeds.length == 0) {
 			requestRandom(address(this), 0, MAX_RANDOM_WORDS);
 		}
+	}
+
+	function handleForecastServiceResponse(bytes32 requestId, bytes memory response) external override {
+		setWave();
+	}
+
+	/**
+	 * Set wave will be set daily by the integration with Weather Forecast API
+	 */
+	function setWave() internal {
+		currentWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
 	}
 }

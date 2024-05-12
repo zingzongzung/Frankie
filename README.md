@@ -24,33 +24,6 @@ Run the following command to deploy the infrastructure
 npx hardhat ignition deploy ignition/modules/01_DeployInfrastructure.js --network fuji --reset
 ```
 
-3 Infrastructure Roles
-
-- Grant Roles to PassManager
-- Grant Roles to NFT
-
-Run the following command to set the infrastructure roels
-
-```shell
-npx hardhat ignition deploy ignition/modules/02_SetInfrastructureRoles.js --network fuji
-```
-
-4 Deploy Collections
-
-- This step is not mandatory, but if run will deploy an example collection
-
-Run the following command to set the infrastructure roels
-
-```shell
-npx hardhat ignition deploy ignition/modules/03_DeployCollection.js --network fuji
-```
-
-4 Setup Collection Permissions
-
-- This step is only mandatory if step 3 was ran.
-
-Run the following command to set the infrastructure roels
-
-```shell
-npx hardhat ignition deploy ignition/modules/04_SetCollectionRoles.js --network fuji
-```
+hardhat.config.js
+npx hardhat vars set INFURA_API_KEY
+npx hardhat vars set FUJI_PRIVATE_KEY
