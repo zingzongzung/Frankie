@@ -453,16 +453,20 @@ describe("Surf Game", function () {
 
       await surfGame.runGame(); //Process wave 3 + 2 elements in the queue
 
-      // const logs = await surfGame.getSurferLogs(surfCollectionNFT.target, 4);
-      // logs.forEach((log) => {
-      //   console.log(
-      //     `Action: ${ethers.decodeBytes32String(
-      //       log.actionName
-      //     )} Current Speed: ${log.currentSpeed} Current Score: ${
-      //       log.currentScore
-      //     }`
-      //   );
-      // });
+      const logs = await surfGame.getSurferRunLog(
+        surfCollectionNFT.target,
+        4,
+        0
+      );
+      logs.forEach((log) => {
+        console.log(
+          `Action: ${ethers.decodeBytes32String(
+            log.actionName
+          )} Current Speed: ${log.currentSpeed} Current Score: ${
+            log.currentScore
+          }`
+        );
+      });
       // console.log(`Log Length: ${logs.length}`);
     });
   });

@@ -1,3 +1,4 @@
+//Hardcoded for Narrabeen
 const latitude = "33.7223";
 const longitude = "151.2984";
 
@@ -27,13 +28,6 @@ const waveConditions = {
   waveCapacity: 0,
 };
 
-function calculateAverage(arr) {
-  return (
-    arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0) /
-    arr.length
-  );
-}
-
 const waveHeightAvg = calculateAverage(
   forecastResponse.data.hourly.wave_height
 );
@@ -44,4 +38,43 @@ const wavePeriodAvg = calculateAverage(
   forecastResponse.data.hourly.wave_period
 );
 
-return Functions.encodeString("25525023012");
+const scoreFromSwellDirection = scoreFromDegree(waveDirectionAvg);
+waveConditions.waveCapacity = Math.trunc(scoreFromSwellDirection);
+waveConditions.waveMaxLength = Math.trunc(
+  wavePeriodAvg * scoreFromSwellDirection
+);
+waveConditions.wavePower = Math.trunc(waveHeightAvg * scoreFromSwellDirection);
+waveConditions.waveSpeed = Math.trunc(scoreFromSwellDirection * 3);
+
+let waveConditionsFormatted = "";
+for (let key in waveConditions) {
+  let currentValue = waveConditions[key].toString();
+  waveConditionsFormatted += currentValue.length + currentValue;
+}
+
+return Functions.encodeString(waveConditionsFormatted);
+
+function calculateAverage(arr) {
+  return (
+    arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0) /
+    arr.length
+  );
+}
+
+function scoreFromDegree(degree) {
+  const normalizedDegree = ((degree % 360) + 360) % 360;
+
+  const difference = Math.min(
+    Math.abs(normalizedDegree - 180),
+    360 - Math.abs(normalizedDegree - 180)
+  );
+
+  const spread = 60;
+  const peakValue = 5;
+  const minValue = 1;
+
+  const score =
+    peakValue * Math.exp(-Math.pow(difference, 2) / (2 * Math.pow(spread, 2)));
+
+  return Math.max(minValue, Math.round(score));
+}

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "./SurfTypes.sol";
 
-abstract contract SurferQueue {
+abstract contract SurfQueue {
 	mapping(uint256 => SurfTypes.Surfer) private surferQueue;
 	uint256 private front = 1;
 	uint256 private back = 0;

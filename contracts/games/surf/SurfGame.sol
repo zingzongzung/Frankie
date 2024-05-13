@@ -6,28 +6,48 @@ import "../../managers/random/RandomConsumerBase.sol";
 import "../../libraries/Roles.sol";
 import "../../libraries/NumberUtils.sol";
 import "./SurfTypes.sol";
-import "./SurferQueue.sol";
+import "./SurfQueue.sol";
 import "hardhat/console.sol";
 import "./Functions/SurfForecastServiceConsumer.sol";
 import "../../libraries/BytesToValue.sol";
 
-contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForecastServiceConsumer {
+/**
+ *
+ * This represents a surf game.
+ *
+ * Each day the conditions are feteched from a marine forecast external system through the use of chianlink functions.
+ * To trigger this request chainlink automation with a daily interval. The conditons affect the wave characteristics
+ *
+ * VRF is used to get a random seed , which will be used to determine how the surfer surfs the wave
+ *
+ * Automation is also used to run the game. It is only called when the conditions to run successfully are met
+ * The conditions are:
+ * 		there aresurfers in the line up
+ * 		here are wave seeds.
+ *
+ * @title Surf Game
+ * @author PN
+ * @notice
+ */
+contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecastServiceConsumer {
+	//see https://docs.chain.link/chainlink-automation/guides/forwarder
+	address runGameForwarder;
+	address performWaveUpdateForwarder;
+
 	SurfTypes.RunLog[] waveLog;
 	using BytesToValue for bytes;
 
 	mapping(address => ICollectionNFT) surfboardCollections;
 	mapping(address => ICollectionNFT) surferCollections;
 
-	uint8[] actionChances;
-	mapping(uint8 => SurfTypes.SurfAction) actionDistribution;
+	// uint8[] actionChances;
+	// mapping(uint8 => SurfTypes.SurfAction) actionDistribution;
 
 	uint256 allWaveConditionsLength;
 	mapping(uint256 => SurfTypes.SurfWave) allWaveConditions;
 
 	uint256[] waveSeeds;
 
-	//
-	// surferLogs[surferNFT_Address] [surferNFT_TokenId] [surferNFT_RunId]
 	mapping(address => mapping(uint256 => mapping(uint256 => SurfTypes.RunLog[]))) surferLogs;
 	mapping(address => mapping(uint256 => uint256)) surferRunsLength;
 	mapping(address => mapping(uint256 => uint256)) surferQueuePosition;
@@ -36,7 +56,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		address randomManager,
 		address surfForecastServiceAddress
 	) NFTManagerBase() RandomConsumerBase(randomManager) SurfForecastServiceConsumer(surfForecastServiceAddress) {
-		setActionDistribution();
+		//setActionDistribution();
 	}
 
 	//Permission and configuration functions
@@ -50,26 +70,16 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		addManagedCollection(surferCollectionAddress);
 	}
 
+	/**
+	 *
+	 * surfer manipulation logic
+	 *
+	 **/
 	function getSurferRunLog(address surferAddress, uint256 tokenId, uint256 surferRunId) public view onlyAuthorizedCollections(surferAddress) returns (SurfTypes.RunLog[] memory) {
 		return surferLogs[surferAddress][tokenId][surferRunId];
 	}
 
 	function getSurferRunHistory() external view {}
-
-	function setActionDistribution() internal {
-		actionChances = [20, 20, 10, 10, 10, 30];
-		//for (uint8 actionIndex = 0 ; actionIndex < actionChances.length ; actionIndex++) {}
-		actionDistribution[0] = SurfTypes.SurfAction(SurfTypes.SPEED_UP, 5, 5);
-		actionDistribution[1] = SurfTypes.SurfAction(SurfTypes.SPEED_DOWN, 1, -5);
-		actionDistribution[2] = SurfTypes.SurfAction(SurfTypes.CUT_BACK, 8, -4);
-		actionDistribution[3] = SurfTypes.SurfAction(SurfTypes.AERIAL, 9, -10);
-		actionDistribution[4] = SurfTypes.SurfAction(SurfTypes.TUBE, 10, -20);
-		actionDistribution[5] = SurfTypes.SurfAction(SurfTypes.WIPEOUT, 0, 0);
-	}
-
-	function canRun() internal view returns (bool) {
-		return waveSeeds.length > 0 && !isSurfQueueEmpty();
-	}
 
 	function getSurferRuns(address surferAddress, uint256 surferId) public view returns (uint256) {
 		return surferRunsLength[surferAddress][surferId];
@@ -77,28 +87,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 
 	function getSurferQueuePosition(address surferAddress, uint256 tokenId) public view returns (uint256) {
 		return surferQueuePosition[surferAddress][tokenId];
-	}
-
-	function runGame() external {
-		if (canRun()) {
-			uint256 waveSeed = getAvailableWaveSeed();
-			SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
-			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
-
-			while (queueProcessLength > 0) {
-				SurfTypes.Surfer memory surfer = getFromSurfQueue();
-				doRun(waveSeed, surfer.surferAddress, surfer.surferId);
-				surferRunsLength[surfer.surferAddress][surfer.surferId]++;
-				delete surferQueuePosition[surfer.surferAddress][surfer.surferId];
-				queueProcessLength--;
-			}
-			//Check if needs more waves
-			if (!isSurfQueueEmpty()) {
-				requestWaveSeedsIfNeeded();
-			}
-		} else {
-			console.log("didnt run");
-		}
 	}
 
 	function queueStatus() public view returns (SurfTypes.Surfer[] memory result) {
@@ -128,13 +116,60 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		requestWaveSeedsIfNeeded();
 	}
 
-	function addWaveSeed(uint waveSeed) internal {
-		waveSeeds.push(waveSeed);
+	function getActionDistribution(address surferAddress, uint256 surferId) internal pure returns (uint8[] memory actionChances, SurfTypes.SurfAction[] memory actionDistribution) {
+		uint8 size = 6;
+		actionChances = new uint8[](size);
+		actionDistribution = new SurfTypes.SurfAction[](size);
+
+		actionChances[0] = 20;
+		actionDistribution[0] = SurfTypes.SurfAction(SurfTypes.SPEED_UP, 5, 5);
+
+		actionChances[1] = 20;
+		actionDistribution[1] = SurfTypes.SurfAction(SurfTypes.SPEED_DOWN, 1, -5);
+
+		actionChances[2] = 10;
+		actionDistribution[2] = SurfTypes.SurfAction(SurfTypes.CUT_BACK, 8, -4);
+
+		actionChances[3] = 10;
+		actionDistribution[3] = SurfTypes.SurfAction(SurfTypes.AERIAL, 9, -10);
+
+		actionChances[4] = 10;
+		actionDistribution[4] = SurfTypes.SurfAction(SurfTypes.TUBE, 10, -20);
+
+		actionChances[5] = 30;
+		actionDistribution[5] = SurfTypes.SurfAction(SurfTypes.WIPEOUT, 0, 0);
 	}
 
-	function getAvailableWaveSeed() internal returns (uint256 waveSeed) {
-		waveSeed = waveSeeds[waveSeeds.length - 1];
-		waveSeeds.pop();
+	/**
+	 *
+	 * Gamne engine logic
+	 *
+	 **/
+	function canRun() internal view returns (bool) {
+		return waveSeeds.length > 0 && !isSurfQueueEmpty();
+	}
+
+	function runGame() external {
+		if (canRun()) {
+			uint256 waveSeed = getAvailableWaveSeed();
+			SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
+			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
+
+			while (queueProcessLength > 0) {
+				SurfTypes.Surfer memory surfer = getFromSurfQueue();
+				SurferNFT surferNFT = new SurferNFT(surfer);
+				doRun(waveSeed, surfer.surferAddress, surfer.surferId, surferNFT);
+				surferRunsLength[surfer.surferAddress][surfer.surferId]++;
+				delete surferQueuePosition[surfer.surferAddress][surfer.surferId];
+				queueProcessLength--;
+			}
+			//Check if needs more waves
+			if (!isSurfQueueEmpty()) {
+				requestWaveSeedsIfNeeded();
+			}
+		} else {
+			console.log("didnt run");
+		}
 	}
 
 	/**
@@ -143,7 +178,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 	 *
 	 * @param waveSeed the wave seed, a uint256 that represents the randomness of this run
 	 */
-	function doRun(uint256 waveSeed, address surferCollectionAddress, uint256 surferId) public {
+	function doRun(uint256 waveSeed, address surferCollectionAddress, uint256 surferId, SurferNFT surferNFT) public {
 		uint8 treshold = NumberUtils.countDigits(waveSeed);
 		uint8 currentRunSpecIndex = 0;
 		uint32 waveSections = 0;
@@ -171,7 +206,8 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		//2 is the number of fixed actions
 		for (uint8 waveSection = 2; waveSection < waveSections + 2; waveSection++) {
 			(actionProbability, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 2, treshold);
-			currentAction = getActionByProbability(actionProbability);
+
+			currentAction = getActionByProbability(actionProbability, surferCollectionAddress, surferId);
 			(currentSpeed, currentScore) = processAction(currentAction, currentSpeed, currentScore, 0, 0);
 			surferLogs[surferCollectionAddress][surferId][currentSurferRunId].push(SurfTypes.RunLog(currentAction.name, currentSpeed, currentScore));
 			if (currentAction.name == SurfTypes.WIPEOUT) {
@@ -185,7 +221,8 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		}
 	}
 
-	function getActionByProbability(uint32 probability) internal view returns (SurfTypes.SurfAction memory surfAction) {
+	function getActionByProbability(uint32 probability, address surferAddress, uint256 surferId) internal pure returns (SurfTypes.SurfAction memory surfAction) {
+		(uint8[] memory actionChances, SurfTypes.SurfAction[] memory actionDistribution) = getActionDistribution(surferAddress, surferId);
 		uint8 actionIndex = 0;
 		uint8 probabilityStart = 0;
 		uint8 probabilityEnd = 0;
@@ -213,22 +250,17 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 
 	/**
 	 *
-	 * Modifiers
+	 * Waves logic
 	 *
 	 */
-	modifier onlyNFTOwner(address collectionNFTaddress, uint256 tokenId) {
-		ICollectionNFT collectionNFT = ICollectionNFT(collectionNFTaddress);
-		if (msg.sender != collectionNFT.getOwner(tokenId)) {
-			revert("Not owner of the NFT");
-		}
-		_;
+	function addWaveSeed(uint waveSeed) internal {
+		waveSeeds.push(waveSeed);
 	}
 
-	/**
-	 *
-	 * VRF integration through random manager
-	 *
-	 **/
+	function getAvailableWaveSeed() internal returns (uint256 waveSeed) {
+		waveSeed = waveSeeds[waveSeeds.length - 1];
+		waveSeeds.pop();
+	}
 
 	function handleVRFResponse(uint /* tokenId */, uint[] memory randomWords) external override {
 		for (uint256 currentIndex; currentIndex < randomWords.length; currentIndex++) {
@@ -255,7 +287,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		surfWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, waveMaxLength, wavePower, waveSpeed, SurfTypes.WaveSide.Left, waveCapacity);
 	}
 
-	function handleForecastServiceResponse(bytes32 requestId, bytes memory response) external override {
+	function handleForecastServiceResponse(bytes32 /*requestId*/, bytes memory response) external override {
 		/* shouuld use request id to verify */
 		setNextWaveConditions(response);
 	}
@@ -286,5 +318,31 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 
 	function getWaveConditions(uint256 allWaveConditionsIndex) internal view returns (SurfTypes.SurfWave memory currentWave) {
 		return allWaveConditions[allWaveConditionsIndex];
+	}
+
+	/**
+	 *
+	 * Modifiers
+	 *
+	 */
+	modifier onlyNFTOwner(address collectionNFTaddress, uint256 tokenId) {
+		ICollectionNFT collectionNFT = ICollectionNFT(collectionNFTaddress);
+		if (msg.sender != collectionNFT.getOwner(tokenId)) {
+			revert("Not owner of the NFT");
+		}
+		_;
+	}
+}
+
+contract SurferNFT {
+	ICollectionNFT surferContract;
+	uint256 surferId;
+
+	ICollectionNFT surfboardContract;
+	uint256 surfboardId;
+
+	constructor(SurfTypes.Surfer memory surfer) {
+		surferContract = ICollectionNFT(surfer.surferAddress);
+		surfboardContract = ICollectionNFT(surfer.surfBoardAddress);
 	}
 }
