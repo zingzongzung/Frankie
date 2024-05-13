@@ -11,7 +11,7 @@ abstract contract SurfForecastServiceConsumer is ISurfForecastServiceConsumer {
 		surfForecastService = SurfForecastService(surfForecastServiceAddress);
 	}
 
-	function sendRequest(address requestor) internal returns (bytes32 requestId) {
-		return sendRequest(requestor);
+	function sendRequest() public returns (bytes32 requestId) {
+		return surfForecastService.sendRequest(address(this));
 	}
 }

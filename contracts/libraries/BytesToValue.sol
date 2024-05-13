@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 library BytesToValue {
-	function toUint_Dynamic(bytes memory dataBytes, uint256 startPos) internal pure returns (uint256 result, uint256 endPosition) {
+	function toUint_Dynamic(bytes memory dataBytes, uint256 startPos) internal pure returns (uint32 result, uint256 endPosition) {
 		uint length = getLength(dataBytes, startPos);
 		startPos++;
 		return (toUint(slice(dataBytes, startPos, length)), startPos + length);
@@ -18,8 +18,8 @@ library BytesToValue {
 	}
 
 	// Converts bytes to uint
-	function toUint(bytes memory b) internal pure returns (uint256) {
-		uint number;
+	function toUint(bytes memory b) internal pure returns (uint32) {
+		uint32 number;
 		for (uint i = 0; i < b.length; i++) {
 			number = number * 10 + (uint8(b[i]) - 48); // ASCII conversion
 		}

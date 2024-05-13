@@ -10,6 +10,7 @@ const {
   bytes32ToString,
   grantRandomManagerRoles,
   addManagedCollectionToNFTManager,
+  grantSurfConsumerRoles,
 } = require("./Configs/CommonPreparation.js");
 
 const {
@@ -61,11 +62,24 @@ describe("Surf Game", function () {
       passNFT
     );
 
+    const MockFunctionsRouter = await ethers.getContractFactory(
+      "MockFunctionsRouter"
+    );
+    const mockFunctionsRouter = await MockFunctionsRouter.deploy();
+
     const SurfForecastService = await ethers.getContractFactory(
       "SurfForecastService"
     );
     const surfForecastService = await SurfForecastService.deploy(
-      /* should be cooredinater address */ passManager.target
+      /* should be cooredinater address */ mockFunctionsRouter.target
+    );
+
+    await surfForecastService.setForecastServiceConfig(
+      "console.log('teste')",
+      ethers.toUtf8Bytes("dummyvalue"),
+      300000,
+      ethers.encodeBytes32String("dummyvalue"),
+      34
     );
 
     const SurfGame = await ethers.getContractFactory("SurfGame");
@@ -74,6 +88,7 @@ describe("Surf Game", function () {
       surfForecastService.target
     );
 
+    await grantSurfConsumerRoles(surfForecastService, surfGame);
     await grantRandomManagerRoles(nftRandomManager, surfGame);
     await addManagedCollectionToNFTManager(surfGame, surfCollectionNFT);
     await addManagedCollectionToNFTManager(surfGame, surfBoardCollectionNFT);
@@ -85,17 +100,54 @@ describe("Surf Game", function () {
       surfCollectionNFT,
       surfBoardCollectionNFT,
       shopManager,
+      mockFunctionsRouter,
+      surfForecastService,
     };
   }
 
-  describe("Test Parser", function () {
+  describe("Surf Forecast integration", function () {
     /**
      *
      * Test Parser
      *
      */
-    it("Test Parser", async function () {
-      const { surfGame } = await deployContracts();
+    it("Test Surf waves count", async function () {
+      const { surfGame, mockFunctionsRouter, surfForecastService } =
+        await deployContracts();
+
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes("25525023012")
+      );
+
+      let waveConditions = await surfGame.getWaveConditionsFromLastDays(10);
+      console.log(waveConditions.length);
+
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes("25625023012")
+      );
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes("25725023012")
+      );
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes("25825023012")
+      );
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes("25925023012")
+      );
+      //SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
+
+      waveConditions = await surfGame.getWaveConditionsFromLastDays(10);
+      console.log(waveConditions.length);
 
       const exampleResponse = ethers.toUtf8Bytes("310031001");
 

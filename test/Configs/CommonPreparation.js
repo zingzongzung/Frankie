@@ -82,6 +82,26 @@ async function grantRandomManagerRoles(randomManager, targetContract) {
 
 /**
  *
+ * Grants necessary random roles
+ *
+ * @param randomManager Must be a deployed random manager
+ * @param  targetContract  Must be a deployed Collection nft
+ */
+async function grantSurfConsumerRoles(randomManager, targetContract) {
+  const NFT_SURF_FORECAST_SERVICE_ROLE =
+    "0x8794dbefcad8d057429a8e6212647fab37fefb070924aa9c4fd35ba03144892b";
+  await randomManager.grantRole(
+    NFT_SURF_FORECAST_SERVICE_ROLE,
+    targetContract.target
+  );
+  await targetContract.grantRole(
+    NFT_SURF_FORECAST_SERVICE_ROLE,
+    randomManager.target
+  );
+}
+
+/**
+ *
  * Add managed collection to nft manager
  *
  * @param nftManager
@@ -188,4 +208,5 @@ module.exports = {
   deployCollection,
   stringToBytes32,
   bytes32ToString,
+  grantSurfConsumerRoles,
 };

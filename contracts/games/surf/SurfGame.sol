@@ -12,7 +12,6 @@ import "./Functions/SurfForecastServiceConsumer.sol";
 import "../../libraries/BytesToValue.sol";
 
 contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForecastServiceConsumer {
-	SurfTypes.SurfWave currentWave;
 	SurfTypes.RunLog[] waveLog;
 	using BytesToValue for bytes;
 
@@ -21,6 +20,9 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 
 	uint8[] actionChances;
 	mapping(uint8 => SurfTypes.SurfAction) actionDistribution;
+
+	uint256 allWaveConditionsLength;
+	mapping(uint256 => SurfTypes.SurfWave) allWaveConditions;
 
 	uint256[] waveSeeds;
 
@@ -34,7 +36,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		address randomManager,
 		address surfForecastServiceAddress
 	) NFTManagerBase() RandomConsumerBase(randomManager) SurfForecastServiceConsumer(surfForecastServiceAddress) {
-		setWave();
 		setActionDistribution();
 	}
 
@@ -81,6 +82,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 	function runGame() external {
 		if (canRun()) {
 			uint256 waveSeed = getAvailableWaveSeed();
+			SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
 			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
 			while (queueProcessLength > 0) {
 				SurfTypes.Surfer memory surfer = getFromSurfQueue();
@@ -149,6 +151,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		int32 currentScore = 0;
 		SurfTypes.SurfAction memory currentAction;
 		uint256 currentSurferRunId = surferRunsLength[surferCollectionAddress][surferId];
+		SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
 
 		//Calculates total wave sections based on the random + the wave configuration
 		(waveSections, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 2, treshold);
@@ -238,21 +241,57 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		}
 	}
 
-	function testParser(bytes memory data) external pure returns (uint256 result_a, uint256 result_b, bool result_c) {
+	//Handle Forecaste service response and map it to a wave
+	function testParser(bytes memory data) external pure returns (uint32 result_a, uint32 result_b, bool result_c) {
 		uint256 startPos = 0;
 		(result_a, startPos) = data.toUint_Dynamic(startPos);
 		(result_b, startPos) = data.toUint_Dynamic(startPos);
 		(result_c, startPos) = data.toBool(startPos);
 	}
 
+	function surfForecastServiceResponseToSurfWave(bytes memory data) internal pure returns (SurfTypes.SurfWave memory surfWave) {
+		uint32 waveMaxLength;
+		uint32 wavePower;
+		uint32 waveSpeed;
+		uint32 waveCapacity;
+		uint256 startPos = 0;
+		(waveMaxLength, startPos) = data.toUint_Dynamic(startPos);
+		(wavePower, startPos) = data.toUint_Dynamic(startPos);
+		(waveSpeed, startPos) = data.toUint_Dynamic(startPos);
+		(waveSpeed, startPos) = data.toUint_Dynamic(startPos);
+		surfWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, waveMaxLength, wavePower, waveSpeed, SurfTypes.WaveSide.Left, waveCapacity);
+	}
+
 	function handleForecastServiceResponse(bytes32 requestId, bytes memory response) external override {
-		setWave();
+		/* shouuld use request id to verify */
+		setNextWaveConditions(response);
 	}
 
 	/**
 	 * Set wave will be set daily by the integration with Weather Forecast API
 	 */
-	function setWave() internal {
-		currentWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
+	function setNextWaveConditions(bytes memory response) internal {
+		allWaveConditions[allWaveConditionsLength] = surfForecastServiceResponseToSurfWave(response);
+		allWaveConditionsLength++;
+		//currentWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
+	}
+
+	function getWaveConditionsFromLastDays(uint256 numberOfDays) external view returns (SurfTypes.SurfWave[] memory surfWaves) {
+		require(numberOfDays <= 10, "The number of days requested exceed maximum allowed");
+		uint256 wavesResultCount = (allWaveConditionsLength > numberOfDays ? numberOfDays : allWaveConditionsLength);
+		uint256 currentAllWaveConditionsIndex = allWaveConditionsLength - 1;
+		surfWaves = new SurfTypes.SurfWave[](wavesResultCount);
+		for (uint256 resultWavesIndex = 0; resultWavesIndex < wavesResultCount; resultWavesIndex++) {
+			surfWaves[resultWavesIndex] = getWaveConditions(currentAllWaveConditionsIndex);
+			if (currentAllWaveConditionsIndex > 0) currentAllWaveConditionsIndex--;
+		}
+	}
+
+	function getCurrentWaveConditions() internal view returns (SurfTypes.SurfWave memory currentWave) {
+		return getWaveConditions(allWaveConditionsLength - 1);
+	}
+
+	function getWaveConditions(uint256 allWaveConditionsIndex) internal view returns (SurfTypes.SurfWave memory currentWave) {
+		return allWaveConditions[allWaveConditionsIndex];
 	}
 }

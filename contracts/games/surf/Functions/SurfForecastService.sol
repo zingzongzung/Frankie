@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
@@ -11,9 +12,6 @@ import "./ISurfForecastServiceConsumer.sol";
 
 contract SurfForecastService is FunctionsClient, AccessControl {
 	using FunctionsRequest for FunctionsRequest.Request;
-
-	bytes public s_lastResponse;
-	bytes public s_lastError;
 
 	string source;
 	bytes encryptedSecretsUrls;
@@ -51,9 +49,7 @@ contract SurfForecastService is FunctionsClient, AccessControl {
 	function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
 		require(s_requests[requestId].exists, "request not found");
 		require(!s_requests[requestId].fulfilled, "request already fulfilled");
-		// ISurfForecastServiceConsumer requestHandler = ISurfForecastServiceConsumer(s_requests[requestId].requestor);
-		// requestHandler.handleForecastServiceResponse(requestId, response);
-		s_lastResponse = response;
-		s_lastError = err;
+		ISurfForecastServiceConsumer requestHandler = ISurfForecastServiceConsumer(s_requests[requestId].requestor);
+		requestHandler.handleForecastServiceResponse(requestId, response);
 	}
 }
