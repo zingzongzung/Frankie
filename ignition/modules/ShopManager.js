@@ -1,5 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { roles, priceFeed, admins } = require("./Configurations.json");
+const { roles, priceFeed, admins } = require("./resources/Configurations.json");
 
 //npx hardhat ignition deploy ignition/modules/ShopManager.js --network fuji --reset
 module.exports = buildModule("ShopManager", (m) => {

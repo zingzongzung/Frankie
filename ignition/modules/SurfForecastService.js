@@ -4,7 +4,9 @@ const {
   roles,
   admins,
   deployerAddress,
-} = require("./Configurations.json");
+} = require("./resources/Configurations.json");
+const fs = require("fs");
+const path = require("path");
 
 //npx hardhat ignition deploy ignition/modules/SurfForecastService.js --network fuji --reset
 module.exports = buildModule("SurfForecastService", (m) => {
@@ -17,20 +19,15 @@ module.exports = buildModule("SurfForecastService", (m) => {
     deployerAddress,
   ]);
 
-  // admins.forEach((adminAddress, i) => {
-  //   //Grant Admin Roles
-  //   m.call(
-  //     surfForecastService,
-  //     "grantRole",
-  //     [roles.defaultAdmin, adminAddress],
-  //     {
-  //       id: `grantRole_Admin${i}`,
-  //     }
-  //   );
-  // });
+  // Initialize functions settings
+  const source = fs
+    .readFileSync(
+      path.resolve(__dirname, "resources/SurfForecastService_Source.js")
+    )
+    .toString();
 
   m.call(surfForecastService, "setForecastServiceConfig", [
-    functions.source,
+    source,
     ethers.hexlify(functions.encryptedSecretsUrls),
     functions.gasLimit,
     ethers.encodeBytes32String(functions.donName),

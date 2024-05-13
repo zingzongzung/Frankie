@@ -93,6 +93,17 @@ describe("Surf Game", function () {
     await addManagedCollectionToNFTManager(surfGame, surfCollectionNFT);
     await addManagedCollectionToNFTManager(surfGame, surfBoardCollectionNFT);
 
+    //Simulate 1st request to set the wave for the first day
+    const simulateWaveRequest = async (waveConditionsBytes) => {
+      await surfGame.sendRequest();
+      await mockFunctionsRouter.mockResponse(
+        surfForecastService.target,
+        ethers.toUtf8Bytes(waveConditionsBytes)
+      );
+    };
+
+    await simulateWaveRequest("25525023012");
+
     return {
       surfGame,
       mockCoordinator,
@@ -102,58 +113,69 @@ describe("Surf Game", function () {
       shopManager,
       mockFunctionsRouter,
       surfForecastService,
+      simulateWaveRequest,
     };
   }
 
   describe("Surf Forecast integration", function () {
     /**
      *
-     * Test Parser
+     * Test Waves Count
      *
      */
     it("Test Surf waves count", async function () {
-      const { surfGame, mockFunctionsRouter, surfForecastService } =
-        await deployContracts();
+      const { surfGame, simulateWaveRequest } = await deployContracts();
+      const WAVE_CONDITIONS_FROM_DAYS = 10;
+      const NUMBER_OF_RUNS = 5;
+      const INITIAL_DAYS_RAN = 1;
 
-      await surfGame.sendRequest();
-      await mockFunctionsRouter.mockResponse(
-        surfForecastService.target,
-        ethers.toUtf8Bytes("25525023012")
+      let waveConditions = await surfGame.getWaveConditionsFromLastDays(
+        WAVE_CONDITIONS_FROM_DAYS
       );
+      expect(waveConditions.length).to.equal(INITIAL_DAYS_RAN);
 
-      let waveConditions = await surfGame.getWaveConditionsFromLastDays(10);
-      console.log(waveConditions.length);
-
-      await surfGame.sendRequest();
-      await mockFunctionsRouter.mockResponse(
-        surfForecastService.target,
-        ethers.toUtf8Bytes("25625023012")
-      );
-      await surfGame.sendRequest();
-      await mockFunctionsRouter.mockResponse(
-        surfForecastService.target,
-        ethers.toUtf8Bytes("25725023012")
-      );
-      await surfGame.sendRequest();
-      await mockFunctionsRouter.mockResponse(
-        surfForecastService.target,
-        ethers.toUtf8Bytes("25825023012")
-      );
-      await surfGame.sendRequest();
-      await mockFunctionsRouter.mockResponse(
-        surfForecastService.target,
-        ethers.toUtf8Bytes("25925023012")
-      );
+      for (let i = 0; i < NUMBER_OF_RUNS; i++) {
+        await simulateWaveRequest("25525023012");
+      }
       //SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
 
-      waveConditions = await surfGame.getWaveConditionsFromLastDays(10);
-      console.log(waveConditions.length);
+      waveConditions = await surfGame.getWaveConditionsFromLastDays(
+        WAVE_CONDITIONS_FROM_DAYS
+      );
+      expect(waveConditions.length).to.equal(
+        WAVE_CONDITIONS_FROM_DAYS > NUMBER_OF_RUNS
+          ? NUMBER_OF_RUNS + INITIAL_DAYS_RAN
+          : WAVE_CONDITIONS_FROM_DAYS
+      );
+    });
+    /**
+     *
+     * Wave is as expected
+     *
+     */
+    it("Wave is as expected", async function () {
+      const { surfGame, simulateWaveRequest } = await deployContracts();
+      const WAVE_CONDITIONS_FROM_DAYS = 10;
+      const NUMBER_OF_RUNS = 5;
+      const INITIAL_DAYS_RAN = 1;
 
-      const exampleResponse = ethers.toUtf8Bytes("310031001");
+      await simulateWaveRequest("25525023013");
+      const waveConditions = await surfGame.getWaveConditionsFromLastDays(
+        WAVE_CONDITIONS_FROM_DAYS
+      );
 
-      const parsedResult = await surfGame.testParser(exampleResponse);
+      const lastWave = {
+        waveMaxLength: waveConditions[0].waveMaxLength,
+        wavePower: waveConditions[0].wavePower,
+        waveSpeed: waveConditions[0].waveSpeed,
+        waveCapacity: waveConditions[0].waveCapacity,
+      };
 
-      console.log(parsedResult);
+      const lastWaveString = JSON.stringify(lastWave, bigIntParser);
+
+      expect(lastWaveString).to.equal(
+        '{"waveMaxLength":"55","wavePower":"50","waveSpeed":"30","waveCapacity":"3"}'
+      );
     });
   });
 

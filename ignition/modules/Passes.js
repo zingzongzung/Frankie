@@ -1,5 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { roles } = require("./Configurations.json");
+const { roles } = require("./resources/Configurations.json");
 const randomManagerModule = require("./RandomManager.js");
 const passManagerModule = require("./PassManager.js");
 

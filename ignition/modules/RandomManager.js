@@ -1,5 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { vrf, roles, admins } = require("./Configurations.json");
+const { vrf, roles, admins } = require("./resources/Configurations.json");
 
 //npx hardhat ignition deploy ignition/modules/RandomManager.js --network fuji --reset
 module.exports = buildModule("RandomManager", (m) => {

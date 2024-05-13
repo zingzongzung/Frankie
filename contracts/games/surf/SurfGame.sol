@@ -84,6 +84,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 			uint256 waveSeed = getAvailableWaveSeed();
 			SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
 			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
+
 			while (queueProcessLength > 0) {
 				SurfTypes.Surfer memory surfer = getFromSurfQueue();
 				doRun(waveSeed, surfer.surferAddress, surfer.surferId);
@@ -241,14 +242,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		}
 	}
 
-	//Handle Forecaste service response and map it to a wave
-	function testParser(bytes memory data) external pure returns (uint32 result_a, uint32 result_b, bool result_c) {
-		uint256 startPos = 0;
-		(result_a, startPos) = data.toUint_Dynamic(startPos);
-		(result_b, startPos) = data.toUint_Dynamic(startPos);
-		(result_c, startPos) = data.toBool(startPos);
-	}
-
 	function surfForecastServiceResponseToSurfWave(bytes memory data) internal pure returns (SurfTypes.SurfWave memory surfWave) {
 		uint32 waveMaxLength;
 		uint32 wavePower;
@@ -258,7 +251,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurferQueue, SurfForeca
 		(waveMaxLength, startPos) = data.toUint_Dynamic(startPos);
 		(wavePower, startPos) = data.toUint_Dynamic(startPos);
 		(waveSpeed, startPos) = data.toUint_Dynamic(startPos);
-		(waveSpeed, startPos) = data.toUint_Dynamic(startPos);
+		(waveCapacity, startPos) = data.toUint_Dynamic(startPos);
 		surfWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, waveMaxLength, wavePower, waveSpeed, SurfTypes.WaveSide.Left, waveCapacity);
 	}
 

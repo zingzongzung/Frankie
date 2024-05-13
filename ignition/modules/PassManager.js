@@ -1,5 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { roles, priceFeed, admins } = require("./Configurations.json");
+const { roles, priceFeed, admins } = require("./resources/Configurations.json");
 
 //npx hardhat ignition deploy ignition/modules/01_DeployInfrastructure.js --network fuji --reset
 module.exports = buildModule("PassManager", (m) => {
