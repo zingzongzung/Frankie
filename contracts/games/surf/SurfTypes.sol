@@ -48,7 +48,7 @@ library SurfTypes {
 	struct Surfer {
 		address surferAddress;
 		uint256 surferId;
-		address surfBoardAddress;
-		uint256 surfBoardId;
+		address surfboardAddress;
+		uint256 surfboardId;
 	}
 }

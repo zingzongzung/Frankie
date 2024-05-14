@@ -220,7 +220,7 @@ describe("Surf Game", function () {
      * Tests Surfer only added once to the queue at any given time
      *
      */
-    it("Add surfer only once", async function () {
+    it("Add surfer or surfboard only once to queue", async function () {
       const {
         surfGame,
         mockCoordinator,
@@ -230,22 +230,30 @@ describe("Surf Game", function () {
         shopManager,
       } = await deployContracts();
 
+      //mint 2 surfers
       await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
+      await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
+
+      //mint 1 surfboard
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
 
-      const addToQueueFunction = async () => {
+      const addToQueueFunction = async (surferId, surfboardId) => {
         await surfGame.addSurferToQueue(
           surfCollectionNFT.target,
-          0,
+          surferId,
           surfBoardCollectionNFT.target,
-          0
+          surfboardId
         );
       };
 
-      await addToQueueFunction();
-
-      await expect(addToQueueFunction()).to.be.revertedWith(
+      //add surfer 0 and surfboard 0 to queue
+      await addToQueueFunction(0, 0);
+      await expect(addToQueueFunction(0, 0)).to.be.revertedWith(
         "Surfer is already queued"
+      );
+      addToQueueFunction(1, 0);
+      await expect(addToQueueFunction(1, 0)).to.be.revertedWith(
+        "Surfboard is already queued"
       );
     });
     /**
@@ -415,7 +423,8 @@ describe("Surf Game", function () {
         shopManager,
       } = await deployContracts();
 
-      const numberOfSurfers = 5;
+      const numberOfSurfers = 2;
+      const surferId = 0;
 
       for (let i = 0; i < numberOfSurfers; i++) {
         await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
@@ -440,14 +449,25 @@ describe("Surf Game", function () {
       );
       //Should be called by the automation
       await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+      await surfGame.addSurferToQueue(
+        surfCollectionNFT.target,
+        surferId,
+        surfBoardCollectionNFT.target,
+        surferId
+      );
       await surfGame.runGame(); //Process wave 2 + 2 elements in the queue
-
+      await surfGame.addSurferToQueue(
+        surfCollectionNFT.target,
+        surferId,
+        surfBoardCollectionNFT.target,
+        surferId
+      );
       //Simulates the response of a wave request
       await mockCoordinator.mockVRFCoordinatorResponse(
         nftRandomManager.target,
         [
           23895781004589149129578100458914450004564864664856305970002450n,
-          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+          23895781004589149129578100458914450004564864664856305970002450n,
         ]
       );
 
@@ -455,7 +475,7 @@ describe("Surf Game", function () {
 
       const logs = await surfGame.getSurferRunLog(
         surfCollectionNFT.target,
-        4,
+        surferId,
         0
       );
       logs.forEach((log) => {
@@ -467,6 +487,33 @@ describe("Surf Game", function () {
           }`
         );
       });
+
+      const nftJSONAttributes = (
+        await surfCollectionNFT.getNFTDetails(surferId)
+      )[1];
+
+      let nft = { traits: [] };
+      for (let i = 0; i < nftJSONAttributes.length; i++) {
+        const attribute = nftJSONAttributes[i];
+        if (attribute.isDefined) {
+          let traitLabel = bytes32ToString(attribute.key);
+          let traitValue;
+          let traitImage;
+          if (attribute.traitType === 1n) {
+            traitValue = parseInt(attribute.value, 16);
+          } else {
+            traitValue = bytes32ToString(attribute.value);
+            if (attribute.traitType === 2n) {
+              traitImage = await collection.getTraitOptionsImage(
+                attribute.key,
+                attribute.value
+              );
+            }
+          }
+          nft.traits.push({ traitLabel, traitValue, traitImage });
+        }
+      }
+      console.log(nft);
       // console.log(`Log Length: ${logs.length}`);
     });
   });

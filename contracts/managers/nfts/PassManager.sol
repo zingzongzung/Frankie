@@ -38,12 +38,8 @@ contract PassManager is NFTManagerBase {
 
 	function setPassUsed(address passAddress, uint passId, bytes32 collectionName) external onlyAuthorizedCollections(passAddress) {
 		ICollectionNFT collection = getCollectionContract(passAddress);
-		collection.setTrait(passId, Constants.PASS_COLLECTION_LABEL, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_LABEL, collectionName));
-		collection.setTrait(
-			passId,
-			Constants.PASS_COLLECTION_ADDRESS_LABEL,
-			Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_ADDRESS_LABEL, bytes32(abi.encodePacked(passAddress)))
-		);
+		collection.setTrait(passId, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_LABEL, collectionName));
+		collection.setTrait(passId, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_ADDRESS_LABEL, bytes32(abi.encodePacked(passAddress))));
 	}
 
 	function getCollectionPrice(address nftCollectionAddress) external view onlyAuthorizedCollections(nftCollectionAddress) returns (uint256) {

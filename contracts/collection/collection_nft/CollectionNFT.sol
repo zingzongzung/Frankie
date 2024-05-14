@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../managers/random/RandomConsumerBase.sol";
 
@@ -108,9 +109,50 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		return ownerOf(tokenId);
 	}
 
-	function setTrait(uint256 tokenId, bytes32 traitKey, Types.Trait memory trait) external override onlyRole(Roles.NFT_MANAGER) {
+	function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+		// Bytes buffer to hold the string characters
+		bytes memory buffer = new bytes(32);
+		uint256 charCount = 0;
+
+		// Iterate through each byte of the bytes32
+		for (uint256 i = 0; i < 32; i++) {
+			// Break if the padding starts
+			if (_bytes32[i] == 0) {
+				break;
+			}
+			// Place the character into the buffer
+			buffer[charCount] = _bytes32[i];
+			charCount++;
+		}
+
+		// Resize the buffer to the actual length and convert it to a string
+		bytes memory realBuffer = new bytes(charCount);
+		for (uint256 i = 0; i < charCount; i++) {
+			realBuffer[i] = buffer[i];
+		}
+
+		return string(realBuffer);
+	}
+
+	function setTraits(uint256 tokenId, Types.Trait[] memory traits) external onlyRole(Roles.NFT_MANAGER) {
+		for (uint256 traitIndex; traitIndex < traits.length; traitIndex++) {
+			_setTrait(tokenId, traits[traitIndex]);
+		}
+	}
+
+	function _setTrait(uint256 tokenId, Types.Trait memory trait) internal {
+		bytes32 traitKey = trait.key;
+		if (!nftTraits[tokenId][traitKey].isDefined) {
+			uint256 traitsSize = nftTraitsSize[tokenId] + 1;
+			nftTraitsSize[tokenId] = traitsSize;
+			nftTraitsKeys[tokenId][traitsSize - 1] = traitKey;
+		}
 		nftTraits[tokenId][traitKey] = trait;
 		emit TraitUpdated(traitKey, tokenId, trait.value);
+	}
+
+	function setTrait(uint256 tokenId, Types.Trait memory trait) external override onlyRole(Roles.NFT_MANAGER) {
+		_setTrait(tokenId, trait);
 	}
 
 	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {

@@ -25,5 +25,7 @@ interface ICollectionNFT is IAccessControl, IERC721, IERC7496, IRandomConsumer {
 
 	function getTraitByKey(uint256 tokenId, bytes32 traitKey) external view returns (Types.Trait memory traitValue);
 
-	function setTrait(uint256 tokenId, bytes32 traitKey, Types.Trait memory trait) external;
+	function setTrait(uint256 tokenId, Types.Trait memory trait) external;
+
+	function setTraits(uint256 tokenId, Types.Trait[] memory traits) external;
 }

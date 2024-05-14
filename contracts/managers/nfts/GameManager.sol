@@ -26,7 +26,7 @@ contract GameManager is NFTManagerBase {
 		if (traitType == Types.TraitType.Options || traitType == Types.TraitType.OptionsWithImage) {
 			result = Generator.rollOptionsTrait(collectionConfig, 99, traitKey, traitType);
 		}
-		collection.setTrait(tokenId, traitKey, result);
+		collection.setTrait(tokenId, result);
 	}
 
 	function getProcessedRequests() external view returns (uint256[] memory, uint256[] memory) {

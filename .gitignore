@@ -1,6 +1,7 @@
 node_modules
 .env
 
+
 # Hardhat files
 /cache
 /artifacts
@@ -17,3 +18,7 @@ node_modules
 ignition/deployments/chain-31337
 ignition/deployments/chain-43113
  
+#admin scripts ignore
+.env.enc
+offchain-secrets.json
+offchain-Urls.json
