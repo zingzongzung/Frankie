@@ -28,6 +28,8 @@ interface ICollectionConfig {
 
 	function getTraitOptionChances(bytes32 traitKey) external view returns (uint8[] memory);
 
+	function hasRandomTraits() external view returns (bool);
+
 	//Collection querying
 	function getNumberOfTraits() external view returns (uint8);
 

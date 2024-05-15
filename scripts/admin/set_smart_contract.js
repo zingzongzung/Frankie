@@ -3,17 +3,18 @@ const path = require("path");
 require("@chainlink/env-enc").config();
 
 const resources = {
-  CollectionConfig: {
-    artifact:
-      "./../../artifacts/contracts/collection/collection_config/CollectionConfig.sol/CollectionConfig.json",
-    type: 1,
-  },
   CollectionNFT: {
     artifact:
       "./../../artifacts/contracts/collection/collection_nft/CollectionNFT.sol/CollectionNFT.json",
+    type: 1,
+  },
+  CollectionConfig: {
+    artifact:
+      "./../../artifacts/contracts/collection/collection_config/CollectionConfig.sol/CollectionConfig.json",
     type: 2,
   },
-  RandomManager: {
+
+  NFTRandomManager: {
     artifact:
       "./../../artifacts/contracts/managers/random/NFTRandomManager.sol/NFTRandomManager.json",
     type: 3,

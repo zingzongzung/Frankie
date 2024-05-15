@@ -14,7 +14,7 @@ const {
   setupCharacterAttributes,
 } = require("./Configs/BaseCollectionConfiguration.js");
 
-//npx hardhat test ./test/genesisNFT.js
+//npx hardhat test ./test/Collection.js
 describe("NFT collectionNFT", function () {
   /**
    *
@@ -88,11 +88,6 @@ describe("NFT collectionNFT", function () {
       await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
       initialCollectionValue = bytes32ToString(
         await passNFT.getTraitValue(1, knownFields.collectionLabel)
-      );
-      console.log(initialCollectionValue);
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
       );
 
       initialCollectionValue = bytes32ToString(

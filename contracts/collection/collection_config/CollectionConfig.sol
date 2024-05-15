@@ -11,6 +11,7 @@ contract CollectionConfig is CollectionConfigBase {
 	PassManager passManager;
 
 	constructor(address passManagerAddress, address passAddress, uint passId, bytes32 hashedMessage, bytes memory signature, bytes32 _collectionName) {
+		randomTraits = true;
 		passManager = PassManager(passManagerAddress);
 		passManager.isAuthorized(passAddress, passId, hashedMessage, signature);
 		// passManager.isAuthorizedV2(passAddress, passId, _collectionName, signature);

@@ -6,7 +6,7 @@ import "../../libraries/Constants.sol";
 
 contract PassConfig is CollectionConfigBase {
 	constructor() {
-		needsRandom = false;
+		randomTraits = false;
 		addTextTrait(Constants.PASS_COLLECTION_LABEL, 100, bytes32(0));
 		addTextTrait(Constants.PASS_COLLECTION_ADDRESS_LABEL, 100, bytes32(0));
 	}

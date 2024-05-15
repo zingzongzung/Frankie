@@ -34,7 +34,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	mapping(uint8 => bytes32) traitKeysByIndex;
 
 	bool isCollectionClosed;
-	bool needsRandom;
+	bool randomTraits;
 
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
 		collectionPrice = _collectionPrice;
@@ -138,5 +138,9 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 
 	function generateNFT(uint genes) external view override returns (Types.Trait[] memory) {
 		return Generator.generateNFT(this, genes);
+	}
+
+	function hasRandomTraits() external view returns (bool) {
+		return randomTraits;
 	}
 }

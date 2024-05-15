@@ -19,6 +19,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	mapping(uint => mapping(bytes32 => Types.Trait)) nftTraits;
 	mapping(uint => mapping(uint => bytes32)) nftTraitsKeys;
 	mapping(uint => uint) nftTraitsSize;
+	mapping(uint => address) tokenMinterAddress;
 
 	uint public _nextTokenId;
 
@@ -32,6 +33,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		tokenURIBaseURL = _tokenURI;
 		collectionConfig = ICollectionConfig(collectionAddress);
+		emit TraitMetadataURIUpdated();
 	}
 
 	//Permissioned functions
@@ -40,13 +42,20 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function safeMint(address to, string calldata name) public onlyRole(Roles.NFT_MANAGER) {
-		startRandomProcess(_nextTokenId, name);
-		_safeMint(to, _nextTokenId);
+		tokenMinterAddress[_nextTokenId] = to;
+
+		if (collectionConfig.hasRandomTraits()) {
+			startRandomProcess(_nextTokenId, name);
+		} else {
+			_generateAndMintNFT(1000, _nextTokenId);
+		}
+
 		_nextTokenId++;
 	}
 
-	function handleVRFResponse(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
-		uint256 genes = randomWords[0];
+	function _generateAndMintNFT(uint genes, uint tokenId) internal {
+		_safeMint(tokenMinterAddress[tokenId], tokenId);
+		delete tokenMinterAddress[tokenId];
 		Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
 		nftTraitsSize[tokenId] = traits.length;
 		bytes32 currentTraitKey;
@@ -56,6 +65,20 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
 			emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
 		}
+	}
+
+	function handleVRFResponse(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
+		_generateAndMintNFT(randomWords[0], tokenId);
+		// uint256 genes = randomWords[0];
+		// Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
+		// nftTraitsSize[tokenId] = traits.length;
+		// bytes32 currentTraitKey;
+		// for (uint currentIndex = 0; currentIndex < traits.length; currentIndex++) {
+		// 	currentTraitKey = traits[currentIndex].key;
+		// 	nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
+		// 	nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
+		// 	emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
+		// }
 	}
 
 	function getTraitByKey(uint256 tokenId, bytes32 traitKey) external view returns (Types.Trait memory traitValue) {
@@ -109,31 +132,6 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		return ownerOf(tokenId);
 	}
 
-	function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
-		// Bytes buffer to hold the string characters
-		bytes memory buffer = new bytes(32);
-		uint256 charCount = 0;
-
-		// Iterate through each byte of the bytes32
-		for (uint256 i = 0; i < 32; i++) {
-			// Break if the padding starts
-			if (_bytes32[i] == 0) {
-				break;
-			}
-			// Place the character into the buffer
-			buffer[charCount] = _bytes32[i];
-			charCount++;
-		}
-
-		// Resize the buffer to the actual length and convert it to a string
-		bytes memory realBuffer = new bytes(charCount);
-		for (uint256 i = 0; i < charCount; i++) {
-			realBuffer[i] = buffer[i];
-		}
-
-		return string(realBuffer);
-	}
-
 	function setTraits(uint256 tokenId, Types.Trait[] memory traits) external onlyRole(Roles.NFT_MANAGER) {
 		for (uint256 traitIndex; traitIndex < traits.length; traitIndex++) {
 			_setTrait(tokenId, traits[traitIndex]);
@@ -142,10 +140,13 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	function _setTrait(uint256 tokenId, Types.Trait memory trait) internal {
 		bytes32 traitKey = trait.key;
+
 		if (!nftTraits[tokenId][traitKey].isDefined) {
+			//If here then it is a new trait
 			uint256 traitsSize = nftTraitsSize[tokenId] + 1;
 			nftTraitsSize[tokenId] = traitsSize;
 			nftTraitsKeys[tokenId][traitsSize - 1] = traitKey;
+			emit TraitMetadataURIUpdated();
 		}
 		nftTraits[tokenId][traitKey] = trait;
 		emit TraitUpdated(traitKey, tokenId, trait.value);
