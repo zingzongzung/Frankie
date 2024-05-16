@@ -155,7 +155,7 @@ async function deployCollection(
   //Mint a pass for owner
   await passManager.mintNFT(passNFT.target, "Pass 1");
 
-  const TEST_MESSAGE = "Example";
+  const TEST_MESSAGE = stringToBytes32(collectionName);
   const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
   const signature = await owner.signMessage(TEST_MESSAGE);
 
@@ -169,7 +169,7 @@ async function deployCollection(
     passId,
     hashedMessage,
     signature,
-    stringToBytes32(collectionName)
+    TEST_MESSAGE //stringToBytes32(collectionName)
   );
 
   //Runs the function to add Traits on collection

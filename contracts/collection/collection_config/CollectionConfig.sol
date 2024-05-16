@@ -14,7 +14,7 @@ contract CollectionConfig is CollectionConfigBase {
 		randomTraits = true;
 		passManager = PassManager(passManagerAddress);
 		passManager.isAuthorized(passAddress, passId, hashedMessage, signature);
-		// passManager.isAuthorizedV2(passAddress, passId, _collectionName, signature);
+		//passManager.isAuthorizedV2(passAddress, passId, _collectionName, signature);
 		isCollectionClosed = false;
 		collectionName = _collectionName;
 		pass = Types.Pass(passAddress, passId);

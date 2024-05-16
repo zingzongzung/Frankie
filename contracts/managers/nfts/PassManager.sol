@@ -11,12 +11,11 @@ import "../../libraries/Types.sol";
 import "../../libraries/Constants.sol";
 import "../../libraries/Utils.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "hardhat/console.sol";
 
 contract PassManager is NFTManagerBase {
 	using ECDSA for bytes32;
 	AggregatorV3Interface internal dataFeed;
-
-	//mapping(address => uint[]) passIdsUsed;
 
 	constructor(address AvaxToUSDAggregatorAddress) NFTManagerBase() {
 		dataFeed = AggregatorV3Interface(AvaxToUSDAggregatorAddress);
@@ -76,7 +75,7 @@ contract PassManager is NFTManagerBase {
 	function isAuthorized(
 		address nftCollectionAddress,
 		uint tokenId,
-		bytes32 originalMessage,
+		bytes32 hashedMessage,
 		bytes memory signature
 	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
 		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
@@ -84,23 +83,22 @@ contract PassManager is NFTManagerBase {
 			revert("This pass has been used already");
 		}
 		address passOwner = collection.getOwner(tokenId);
-		bool isSignatureVerified = originalMessage.recover(signature) == passOwner;
+		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");
 	}
 
 	function isAuthorizedV2(
 		address nftCollectionAddress,
-		uint tokenId,
+		uint passId,
 		//string memory originalMessage,
-		bytes32 originalMessage,
+		bytes32 collectionName,
 		bytes memory signature
-	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
+	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, passId) {
 		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
-		address passOwner = collection.getOwner(tokenId);
-
+		address passOwner = collection.getOwner(passId);
 		// bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(bytes(originalMessage));
-		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(originalMessage);
+		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(abi.encodePacked("0x", collectionName));
 		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");

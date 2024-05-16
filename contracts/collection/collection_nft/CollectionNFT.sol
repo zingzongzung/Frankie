@@ -51,7 +51,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			startRandomProcess(_nextTokenId, name);
 		} else {
 			/* this needs to be improved , just reusing the same logic to populate the nft becase of time constraints */
-			_generateAndMintNFT(100000, _nextTokenId);
+			_generateAndMintNFT(99999999999, _nextTokenId);
 		}
 
 		_nextTokenId++;
