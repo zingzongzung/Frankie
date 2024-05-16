@@ -21,4 +21,4 @@ if (forecastResponse.error) {
   console.log(forecastResponse.message);
 }
 
-return Functions.encodeString(forecastResponse.data);
+return Functions.encodeString(forecastResponse.data.toString());

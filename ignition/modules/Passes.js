@@ -22,7 +22,7 @@ module.exports = buildModule("Passes", (m) => {
       passConfig,
       nftRandomManager,
       "https://personal-ixqe4210.outsystemscloud.com/NFTMaker_API/rest/Token",
-      "NFT Forge Pass",
+      "Frankie Pass",
       "NFP",
     ],
     {
@@ -43,7 +43,7 @@ module.exports = buildModule("Passes", (m) => {
     id: "grantRole_randomManager_on_PassNFT_to_nftRandomManager",
   });
 
-  m.call(passManager, "mintNFT", [passNFT, "Pass 1"]);
+  //m.call(passManager, "mintNFT", [passNFT, "Pass 1"]);
   // m.call(passManager, "mintNFT", [passNFT, "Pass 2"], {
   //   id: "mintAnotherPass",
   // });

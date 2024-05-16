@@ -34,14 +34,15 @@ module.exports = buildModule("SurfForecastService", (m) => {
     functions.subscriptionId,
   ]);
 
-  // const coordinator = m.contractAt(
-  //   "FunctionsRouterInterface",
-  //   functions.routerAddress
-  // );
-  // m.call(coordinator, "addConsumer", [
-  //   functions.subscriptionId,
-  //   surfForecastService,
-  // ]);
+  //Couldnt load the FunctionsRouter, so used the interface from functions subscriptions whihc has the addconsumer method and is implemented by the FunctionsRouter at the given address
+  const coordinator = m.contractAt(
+    "IFunctionsSubscriptions",
+    functions.routerAddress
+  );
+  m.call(coordinator, "addConsumer", [
+    functions.subscriptionId,
+    surfForecastService,
+  ]);
 
   return { surfForecastService };
 });
