@@ -55,14 +55,24 @@ async function deployContractsInfrastructure() {
   await addManagedCollectionToNFTManager(passManager, passNFT);
   await grantRandomManagerRoles(nftRandomManager, passNFT);
 
+  const simulateMockResponse = async (responses) => {
+    let simulatedResponses = responses || [
+      23895781004589149129578100458914450004567867867856785990002450n,
+    ];
+    await mockCoordinator.mockVRFCoordinatorResponse(
+      nftRandomManager.target,
+      simulatedResponses
+    );
+  };
+
   return {
-    mockCoordinator,
     nftRandomManager,
     shopManager,
     gameManager,
     passManager,
     passConfig,
     passNFT,
+    simulateMockResponse,
   };
 }
 

@@ -23,6 +23,9 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	uint public _nextTokenId;
 
+	uint dynamicTraitsSize;
+	mapping(uint => Types.Trait) dynamicTraits;
+
 	constructor(
 		address collectionAddress,
 		address nftRandomManagerAddress,
@@ -47,7 +50,8 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		if (collectionConfig.hasRandomTraits()) {
 			startRandomProcess(_nextTokenId, name);
 		} else {
-			_generateAndMintNFT(1000, _nextTokenId);
+			/* this needs to be improved , just reusing the same logic to populate the nft becase of time constraints */
+			_generateAndMintNFT(100000, _nextTokenId);
 		}
 
 		_nextTokenId++;
@@ -63,22 +67,12 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			currentTraitKey = traits[currentIndex].key;
 			nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
 			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
-			emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
+			//emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
 		}
 	}
 
 	function handleVRFResponse(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {
 		_generateAndMintNFT(randomWords[0], tokenId);
-		// uint256 genes = randomWords[0];
-		// Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
-		// nftTraitsSize[tokenId] = traits.length;
-		// bytes32 currentTraitKey;
-		// for (uint currentIndex = 0; currentIndex < traits.length; currentIndex++) {
-		// 	currentTraitKey = traits[currentIndex].key;
-		// 	nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
-		// 	nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
-		// 	emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
-		// }
 	}
 
 	function getTraitByKey(uint256 tokenId, bytes32 traitKey) external view returns (Types.Trait memory traitValue) {
@@ -120,7 +114,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	}
 
 	function getTraitMetadataURI() external view returns (string memory uri) {
-		return string(abi.encodePacked(tokenURIBaseURL, "/GetTraitMetadataURI/", address(collectionConfig).toHexString()));
+		return string(abi.encodePacked(tokenURIBaseURL, "/GetTraitMetadataURI/", address(this).toHexString()));
 	}
 
 	/* Setters */
@@ -142,11 +136,10 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		bytes32 traitKey = trait.key;
 
 		if (!nftTraits[tokenId][traitKey].isDefined) {
-			//If here then it is a new trait
 			uint256 traitsSize = nftTraitsSize[tokenId] + 1;
 			nftTraitsSize[tokenId] = traitsSize;
 			nftTraitsKeys[tokenId][traitsSize - 1] = traitKey;
-			emit TraitMetadataURIUpdated();
+			handleNewDynamicTrait(trait);
 		}
 		nftTraits[tokenId][traitKey] = trait;
 		emit TraitUpdated(traitKey, tokenId, trait.value);
@@ -189,6 +182,21 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	function copy(Types.Trait[] storage target, Types.Trait[] memory origin) internal {
 		for (uint i = 0; i < origin.length; i++) {
 			target.push(Types.Trait(origin[i].isDefined, origin[i].traitType, origin[i].key, origin[i].value));
+		}
+	}
+
+	//Post added traits handling
+	function handleNewDynamicTrait(Types.Trait memory trait) internal {
+		dynamicTraits[dynamicTraitsSize] = trait;
+		dynamicTraitsSize++;
+
+		emit TraitMetadataURIUpdated();
+	}
+
+	function getDynamicTraits() external view returns (Types.Trait[] memory traits) {
+		traits = new Types.Trait[](dynamicTraitsSize);
+		for (uint index; index < dynamicTraitsSize; index++) {
+			traits[index] = dynamicTraits[index];
 		}
 	}
 }

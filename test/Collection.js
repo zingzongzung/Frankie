@@ -31,6 +31,7 @@ describe("NFT collectionNFT", function () {
       passManager,
       passConfig,
       passNFT,
+      simulateMockResponse,
     } = await deployContractsInfrastructure();
 
     const { collection, collectionNFT, CollectionConfigFactory } =
@@ -63,6 +64,7 @@ describe("NFT collectionNFT", function () {
       passNFT,
       passConfig,
       CollectionConfigFactory,
+      simulateMockResponse,
     };
   }
 
@@ -74,8 +76,6 @@ describe("NFT collectionNFT", function () {
         passConfig,
         otherAccount,
         CollectionConfigFactory,
-        nftRandomManager,
-        mockCoordinator,
       } = await deployContracts();
 
       const collectionName = "Samurais of Sydney";
@@ -149,7 +149,7 @@ describe("NFT collectionNFT", function () {
       const {
         collectionNFT,
         shopManager,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         collection,
       } = await deployContracts();
@@ -158,10 +158,7 @@ describe("NFT collectionNFT", function () {
         value: ethers.parseEther("0.9999"),
       });
 
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const nftJSONAttributes = (await collectionNFT.getNFTDetails(0))[1];
 
@@ -197,13 +194,9 @@ describe("NFT collectionNFT", function () {
 
     it("Shop/mint  an item that costs more than 0", async function () {
       const {
-        collection,
         collectionNFT,
-        owner,
         shopManager,
-        mockCoordinator,
-        nftRandomManager,
-        gameManager,
+        simulateMockResponse,
         expectedToken,
       } = await deployContracts();
 
@@ -214,10 +207,7 @@ describe("NFT collectionNFT", function () {
         value: ethers.parseEther("0.9999"),
       });
 
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const nftJSON = await collectionNFT.getNFTDetails(0);
       const nftJSONString = JSON.stringify(nftJSON, bigIntParser);
@@ -230,11 +220,10 @@ describe("NFT collectionNFT", function () {
 
     it("Shops/mint and rerolls trait", async function () {
       const {
-        collection,
         collectionNFT,
         owner,
         shopManager,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         gameManager,
         expectedToken,
@@ -244,10 +233,7 @@ describe("NFT collectionNFT", function () {
         value: ethers.parseEther("0.9999"),
       });
 
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       let nftJSON = await collectionNFT.getNFTDetails(0);
       let nftJSONString = JSON.stringify(nftJSON, bigIntParser);
@@ -280,7 +266,7 @@ describe("NFT collectionNFT", function () {
         collectionNFT,
         owner,
         shopManager,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         expectedToken,
       } = await deployContracts();
@@ -290,10 +276,7 @@ describe("NFT collectionNFT", function () {
 
       await shopManager.mintNFT(collectionNFT.target, `Token `);
 
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const nftJSON = await collectionNFT.getNFTDetails(0);
       const nftJSONString = JSON.stringify(nftJSON, (key, value) =>

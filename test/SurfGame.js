@@ -23,13 +23,13 @@ describe("Surf Game", function () {
     const [owner, otherAccount] = await ethers.getSigners();
 
     const {
-      mockCoordinator,
       nftRandomManager,
       shopManager,
       gameManager,
       passManager,
       passConfig,
       passNFT,
+      simulateMockResponse,
     } = await deployContractsInfrastructure();
 
     const {
@@ -106,7 +106,6 @@ describe("Surf Game", function () {
 
     return {
       surfGame,
-      mockCoordinator,
       nftRandomManager,
       surfCollectionNFT,
       surfBoardCollectionNFT,
@@ -114,6 +113,7 @@ describe("Surf Game", function () {
       mockFunctionsRouter,
       surfForecastService,
       simulateWaveRequest,
+      simulateMockResponse,
     };
   }
 
@@ -188,7 +188,7 @@ describe("Surf Game", function () {
     it("Fails to add surfer that is not owned", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -200,15 +200,9 @@ describe("Surf Game", function () {
       await shopManager
         .connect(otherAccount)
         .mintNFT(surfCollectionNFT, "Surfer ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const addToQueueFunction = async () => {
         await surfGame.addSurferToQueue(
@@ -231,7 +225,7 @@ describe("Surf Game", function () {
     it("Add surfer or surfboard only once to queue", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -240,22 +234,13 @@ describe("Surf Game", function () {
 
       //mint 2 surfers
       await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
       await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       //mint 1 surfboard
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const addToQueueFunction = async (surferId, surfboardId) => {
         await surfGame.addSurferToQueue(
@@ -284,7 +269,7 @@ describe("Surf Game", function () {
     it("Add surfer to queue again after the game has run", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -292,15 +277,9 @@ describe("Surf Game", function () {
       } = await deployContracts();
 
       await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const addToQueueFunction = async () => {
         await surfGame.addSurferToQueue(
@@ -313,14 +292,13 @@ describe("Surf Game", function () {
       await addToQueueFunction();
 
       //Simulates the game running (Response from VRF + automation runing the game loop)
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [
-          23895781004589149129578100458914450004564864664856305970002450n,
-          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
-        ]
-      );
+      await simulateMockResponse([
+        23895781004589149129578100458914450004564864664856305970002450n,
+        22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+      ]);
       await surfGame.runGame();
+      const dynamicTraits = await surfCollectionNFT.getDynamicTraits();
+      console.log(dynamicTraits);
 
       await expect(addToQueueFunction()).to.not.be.reverted;
     });
@@ -332,7 +310,7 @@ describe("Surf Game", function () {
     it("The queue position of a surfer in a  first run and in a second run is different", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -366,15 +344,9 @@ describe("Surf Game", function () {
 
       for (let i = 0; i < numberOfSurfers; i++) {
         await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
-        await mockCoordinator.mockVRFCoordinatorResponse(
-          nftRandomManager.target,
-          [23895781004589149129578100458914450004567867867856785990002450n]
-        );
+        await simulateMockResponse();
         await shopManager.mintNFT(surfBoardCollectionNFT, "Board " + i);
-        await mockCoordinator.mockVRFCoordinatorResponse(
-          nftRandomManager.target,
-          [23895781004589149129578100458914450004567867867856785990002450n]
-        );
+        await simulateMockResponse();
         await surfGame.addSurferToQueue(
           surfCollectionNFT.target,
           i,
@@ -387,13 +359,10 @@ describe("Surf Game", function () {
       expect(surferPosition).to.equal(firstRunSurferPosition);
 
       //Simulates the game running (Response from VRF + automation runing the game loop)
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [
-          23895781004589149129578100458914450004564864664856305970002450n,
-          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
-        ]
-      );
+      await simulateMockResponse([
+        23895781004589149129578100458914450004564864664856305970002450n,
+        22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+      ]);
       await surfGame.runGame();
 
       await addToQueueFunction();
@@ -408,7 +377,7 @@ describe("Surf Game", function () {
     it("Can get the surfer object at a specific position", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -416,15 +385,9 @@ describe("Surf Game", function () {
       } = await deployContracts();
 
       await shopManager.mintNFT(surfCollectionNFT, "Surfer ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
       await shopManager.mintNFT(surfBoardCollectionNFT, "Board ");
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [23895781004589149129578100458914450004567867867856785990002450n]
-      );
+      await simulateMockResponse();
 
       const addToQueueFunction = async () => {
         await surfGame.addSurferToQueue(
@@ -460,7 +423,7 @@ describe("Surf Game", function () {
     it("Gets waves seeds from random and process game", async function () {
       const {
         surfGame,
-        mockCoordinator,
+        simulateMockResponse,
         nftRandomManager,
         surfCollectionNFT,
         surfBoardCollectionNFT,
@@ -472,15 +435,9 @@ describe("Surf Game", function () {
 
       for (let i = 0; i < numberOfSurfers; i++) {
         await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
-        await mockCoordinator.mockVRFCoordinatorResponse(
-          nftRandomManager.target,
-          [23895781004589149129578100458914450004567867867856785990002450n]
-        );
+        await simulateMockResponse();
         await shopManager.mintNFT(surfBoardCollectionNFT, "Board " + i);
-        await mockCoordinator.mockVRFCoordinatorResponse(
-          nftRandomManager.target,
-          [23895781004589149129578100458914450004567867867856785990002450n]
-        );
+        await simulateMockResponse();
         await surfGame.addSurferToQueue(
           surfCollectionNFT.target,
           i,
@@ -492,13 +449,10 @@ describe("Surf Game", function () {
       // console.log(await surfGame.queueStatus());
 
       //Simulates the response of a wave request
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [
-          23895781004589149129578100458914450004564864664856305970002450n,
-          22223344010101010101010101010101010101010101010101010101010101010101010101055n,
-        ]
-      );
+      await simulateMockResponse([
+        23895781004589149129578100458914450004564864664856305970002450n,
+        22223344010101010101010101010101010101010101010101010101010101010101010101055n,
+      ]);
       //Should be called by the automation
       await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
       await surfGame.addSurferToQueue(
@@ -515,13 +469,10 @@ describe("Surf Game", function () {
         surferId
       );
       //Simulates the response of a wave request
-      await mockCoordinator.mockVRFCoordinatorResponse(
-        nftRandomManager.target,
-        [
-          23895781004589149129578100458914450004564864664856305970002450n,
-          23895781004589149129578100458914450004564864664856305970002450n,
-        ]
-      );
+      await simulateMockResponse([
+        23895781004589149129578100458914450004564864664856305970002450n,
+        23895781004589149129578100458914450004564864664856305970002450n,
+      ]);
 
       await surfGame.runGame(); //Process wave 3 + 2 elements in the queue
 
@@ -566,6 +517,7 @@ describe("Surf Game", function () {
         }
       }
       console.log(nft);
+
       // console.log(`Log Length: ${logs.length}`);
     });
   });

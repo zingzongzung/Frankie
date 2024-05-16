@@ -49,6 +49,10 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	mapping(address => mapping(uint256 => uint256)) surferQueuePosition;
 	mapping(address => mapping(uint256 => uint256)) surfboardQueuePosition;
 
+	//Managed Collection
+	address surferCollectionAddress;
+	address surfboardCollectionAddress;
+
 	//Events
 	event SurferAddedToQueue();
 	event WaveSurfEnd();
@@ -59,6 +63,20 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		address surfForecastServiceAddress
 	) NFTManagerBase() RandomConsumerBase(randomManager) SurfForecastServiceConsumer(surfForecastServiceAddress) {
 		//setActionDistribution();
+	}
+
+	function setSurfGameAddresses(address _surferCollectionAddress, address _surfboardCollectionAddress) external {
+		//This is commented out for develop
+		//require(surferCollectionAddress == address(0) && _surfboardCollectionAddress == address(0), "The addresses are already set");
+		surferCollectionAddress = _surferCollectionAddress;
+		surfboardCollectionAddress = _surfboardCollectionAddress;
+		addManagedCollection(_surferCollectionAddress);
+		addManagedCollection(_surfboardCollectionAddress);
+	}
+
+	function getGameAddresses() external view returns (address _surferCollectionAddress, address _surfboardCollectionAddress) {
+		_surferCollectionAddress = surferCollectionAddress;
+		_surfboardCollectionAddress = surfboardCollectionAddress;
 	}
 
 	/**
@@ -203,11 +221,11 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 			(actionProbability, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 2, treshold);
 			(currentSpeed, currentScore, isWipeout) = logRandomAction(surfer, actionProbability, currentSpeed, currentScore);
 			if (isWipeout || currentSpeed < int32(currentWave.waveSpeed)) {
-				//Close run and set scores
-				increaseLevel(surfer, currentScore);
+				//Close run
 				break;
 			}
 		}
+		increaseLevel(surfer, currentScore);
 	}
 
 	function logRandomAction(

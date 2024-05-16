@@ -49,7 +49,10 @@ contract SurfForecastService is FunctionsClient, AccessControl {
 	function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
 		require(s_requests[requestId].exists, "request not found");
 		require(!s_requests[requestId].fulfilled, "request already fulfilled");
-		ISurfForecastServiceConsumer requestHandler = ISurfForecastServiceConsumer(s_requests[requestId].requestor);
-		requestHandler.handleForecastServiceResponse(requestId, response);
+		if (response.length > 0) {
+			s_requests[requestId].fulfilled = true;
+			ISurfForecastServiceConsumer requestHandler = ISurfForecastServiceConsumer(s_requests[requestId].requestor);
+			requestHandler.handleForecastServiceResponse(requestId, response);
+		}
 	}
 }

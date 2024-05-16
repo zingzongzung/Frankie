@@ -34,6 +34,11 @@ const resources = {
       "./../../artifacts/contracts/collection/collection_nft/CollectionNFT.sol/CollectionNFT.json",
     type: 7,
   },
+  SurfGame: {
+    artifact:
+      "./../../artifacts/contracts/games/surf/SurfGame.sol/SurfGame.json",
+    type: 8,
+  },
 };
 
 const setSmartContract = (contractName, secretsURL) => {
@@ -116,6 +121,8 @@ const main = () => {
     Object.keys(resources).forEach((key) => {
       setSmartContract(key);
     });
+  } else if (param === "help") {
+    console.log(resources);
   } else {
     setSmartContract(param);
   }
