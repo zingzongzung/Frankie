@@ -43,7 +43,6 @@ describe("Surf Game", function () {
       shopManager,
       gameManager,
       passManager,
-      passConfig,
       passNFT
     );
 
@@ -58,7 +57,6 @@ describe("Surf Game", function () {
       shopManager,
       gameManager,
       passManager,
-      passConfig,
       passNFT
     );
 

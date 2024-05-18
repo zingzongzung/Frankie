@@ -149,11 +149,11 @@ async function signANumberAndAbytes32(signer, aNumber, aBytes32) {
 
   const messageSigned = await signer.signMessage(new Uint8Array(value));
 
-  console.log(new Uint8Array(value));
+  // console.log(new Uint8Array(value));
 
-  console.log(messageConcatenated);
-  console.log(messageToSign);
-  console.log(messageSigned);
+  // console.log(messageConcatenated);
+  // console.log(messageToSign);
+  // console.log(messageSigned);
   return messageSigned;
 }
 
@@ -182,11 +182,6 @@ async function deployCollection(
   passNFT
 ) {
   const [owner] = await ethers.getSigners();
-
-  console.log("Below is 0 + make it odd");
-  console.log(
-    await signANumberAndAbytes32(owner, 0, stringToBytes32("Make it Odd"))
-  );
 
   //Mint a pass for owner
   await passManager.mintNFT(passNFT.target, "Pass 1");
