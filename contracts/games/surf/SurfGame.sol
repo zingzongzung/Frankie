@@ -338,17 +338,21 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	 */
 	function getWaveConditionsFromLastDays(uint256 numberOfDays) external view returns (SurfTypes.SurfWave[] memory surfWaves) {
 		require(numberOfDays <= 10, "The number of days requested exceed maximum allowed");
-		uint256 wavesResultCount = (allWaveConditionsLength > numberOfDays ? numberOfDays : allWaveConditionsLength);
-		uint256 currentAllWaveConditionsIndex = allWaveConditionsLength - 1;
-		surfWaves = new SurfTypes.SurfWave[](wavesResultCount);
-		for (uint256 resultWavesIndex = 0; resultWavesIndex < wavesResultCount; resultWavesIndex++) {
-			surfWaves[resultWavesIndex] = getWaveConditions(currentAllWaveConditionsIndex);
-			if (currentAllWaveConditionsIndex > 0) currentAllWaveConditionsIndex--;
+		if (allWaveConditionsLength > 0) {
+			uint256 wavesResultCount = (allWaveConditionsLength > numberOfDays ? numberOfDays : allWaveConditionsLength);
+			uint256 currentAllWaveConditionsIndex = allWaveConditionsLength - 1;
+			surfWaves = new SurfTypes.SurfWave[](wavesResultCount);
+			for (uint256 resultWavesIndex = 0; resultWavesIndex < wavesResultCount; resultWavesIndex++) {
+				surfWaves[resultWavesIndex] = getWaveConditions(currentAllWaveConditionsIndex);
+				if (currentAllWaveConditionsIndex > 0) currentAllWaveConditionsIndex--;
+			}
 		}
 	}
 
 	function getCurrentWaveConditions() internal view returns (SurfTypes.SurfWave memory currentWave) {
-		return getWaveConditions(allWaveConditionsLength - 1);
+		if (allWaveConditionsLength > 0) {
+			currentWave = getWaveConditions(allWaveConditionsLength - 1);
+		}
 	}
 
 	function getWaveConditions(uint256 allWaveConditionsIndex) internal view returns (SurfTypes.SurfWave memory currentWave) {

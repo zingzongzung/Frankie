@@ -32,5 +32,5 @@ module.exports = buildModule("SurfGame", (m) => {
     id: "grantRole_randomManager_on_cSurfGame_to_nftRandomManager",
   });
 
-  return { surfForecastService };
+  return { surfForecastService, surfGame };
 });
