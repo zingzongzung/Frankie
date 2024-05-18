@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../managers/random/RandomConsumerBase.sol";
+import "../../managers/nfts/PassManager.sol";
 
 import "./ICollectionNFT.sol";
 
@@ -31,11 +32,17 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		address nftRandomManagerAddress,
 		string memory _tokenURI,
 		string memory name,
-		string memory symbol
+		string memory symbol,
+		bytes memory signature
 	) ERC721(name, symbol) RandomConsumerBase(nftRandomManagerAddress) {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		tokenURIBaseURL = _tokenURI;
 		collectionConfig = ICollectionConfig(collectionAddress);
+		(bool isPass, Types.Pass memory pass, PassManager passManager) = collectionConfig.getPassSettings();
+		//If is not a pass
+		if (!isPass) {
+			passManager.setPassCollectionAddress(pass.passAddress, pass.passId, address(this), signature);
+		}
 		emit TraitMetadataURIUpdated();
 	}
 
@@ -160,13 +167,6 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		return tokensOwned;
 	}
 
-	//Internal Functions
-	function startRandomProcess(uint256 tokenId, string memory name) internal {
-		Types.NFT storage myNft = nftDetails[tokenId];
-		myNft.name = name;
-		requestRandom(address(this), tokenId, 1);
-	}
-
 	function tokenOfOwnerByIndex(address owner, uint startIndex) internal view returns (uint256) {
 		return tokenOfOwnerByIndexRecursive(owner, startIndex);
 	}
@@ -177,6 +177,13 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		} else {
 			return tokenOfOwnerByIndexRecursive(owner, currentIndex + 1);
 		}
+	}
+
+	//Internal Functions
+	function startRandomProcess(uint256 tokenId, string memory name) internal {
+		Types.NFT storage myNft = nftDetails[tokenId];
+		myNft.name = name;
+		requestRandom(address(this), tokenId, 1);
 	}
 
 	function copy(Types.Trait[] storage target, Types.Trait[] memory origin) internal {

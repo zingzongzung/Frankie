@@ -1,6 +1,8 @@
 const {} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 
+const passNFTName = "Pass NFT";
+
 /**
  *
  * Deploys the base contracts for the product
@@ -47,8 +49,9 @@ async function deployContractsInfrastructure() {
     passConfig.target,
     nftRandomManager.target,
     "localhost",
-    "Pass NFT",
-    "Pass"
+    passNFTName,
+    "Pass",
+    new Uint8Array()
   );
 
   //Grant necessary permissions to the pass manager to our new pass
@@ -125,6 +128,35 @@ async function addManagedCollectionToNFTManager(nftManager, targetCollection) {
   await targetCollection.grantRole(NFT_MANAGER, nftManager.target);
 }
 
+async function signANumberAndAbytes32(signer, aNumber, aBytes32) {
+  const messageConcatenated = ethers.solidityPacked(
+    ["uint256", "bytes32"],
+    [aNumber, aBytes32]
+  );
+
+  const messageToSign = ethers.keccak256(messageConcatenated);
+
+  // const messageToSign = ethers.solidityPackedKeccak256(
+  //   ["uint256", "bytes32"],
+  //   [aNumber, aBytes32]
+  // );
+
+  let value = [];
+  for (let i = 2; i < messageToSign.length; i = i + 2) {
+    let current = "0x" + messageToSign.substring(i, i + 2);
+    value.push(current);
+  }
+
+  const messageSigned = await signer.signMessage(new Uint8Array(value));
+
+  console.log(new Uint8Array(value));
+
+  console.log(messageConcatenated);
+  console.log(messageToSign);
+  console.log(messageSigned);
+  return messageSigned;
+}
+
 /**
  *
  * Deploys a collection
@@ -147,17 +179,24 @@ async function deployCollection(
   shopManager,
   gameManager,
   passManager,
-  passConfig,
   passNFT
 ) {
-  const [owner, otherAccount] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
+
+  console.log("Below is 0 + make it odd");
+  console.log(
+    await signANumberAndAbytes32(owner, 0, stringToBytes32("Make it Odd"))
+  );
 
   //Mint a pass for owner
   await passManager.mintNFT(passNFT.target, "Pass 1");
 
-  const TEST_MESSAGE = stringToBytes32(collectionName);
-  const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
-  const signature = await owner.signMessage(TEST_MESSAGE);
+  const collectionNameBytes32 = stringToBytes32(collectionName);
+  const signature = await signANumberAndAbytes32(
+    owner,
+    passId,
+    collectionNameBytes32
+  );
 
   //Deploy the collection
   const CollectionConfigFactory = await ethers.getContractFactory(
@@ -167,9 +206,8 @@ async function deployCollection(
     passManager.target,
     passNFT.target,
     passId,
-    hashedMessage,
     signature,
-    TEST_MESSAGE //stringToBytes32(collectionName)
+    collectionNameBytes32
   );
 
   //Runs the function to add Traits on collection
@@ -182,7 +220,8 @@ async function deployCollection(
     nftRandomManager.target,
     "localhost",
     collectionName,
-    "GGGG"
+    "GGGG",
+    signature
   );
 
   //Grant necessary permissions to use the random manager

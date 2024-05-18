@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../../libraries/Types.sol";
+import "../../managers/nfts/PassManager.sol";
 
 interface ICollectionConfig {
 	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external;
@@ -40,4 +41,6 @@ interface ICollectionConfig {
 	function getTraitOptionsLabel(bytes32 traitKey, uint32 traitId) external view returns (bytes32);
 
 	function generateNFT(uint genes) external view returns (Types.Trait[] memory);
+
+	function getPassSettings() external view returns (bool, Types.Pass memory, PassManager);
 }

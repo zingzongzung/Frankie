@@ -19,9 +19,9 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	}
 
 	function _mintNFT(address nftCollectionAddress, string calldata nftName) internal {
-		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
+		ICollectionNFT collectionNFT = getCollectionContract(nftCollectionAddress);
 
-		collection.safeMint(msg.sender, nftName);
+		collectionNFT.safeMint(msg.sender, nftName);
 	}
 
 	function addManagedCollection(address nftCollectionAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {

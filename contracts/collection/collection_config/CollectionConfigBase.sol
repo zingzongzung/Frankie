@@ -143,4 +143,6 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	function hasRandomTraits() external view returns (bool) {
 		return randomTraits;
 	}
+
+	function getPassSettings() external view virtual override returns (bool, Types.Pass memory, PassManager);
 }

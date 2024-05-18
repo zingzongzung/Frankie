@@ -24,6 +24,7 @@ module.exports = buildModule("Passes", (m) => {
       "https://personal-ixqe4210.outsystemscloud.com/NFTMaker_API/rest/Token",
       "Frankie Pass",
       "NFP",
+      roles.defaultAdmin, //Just needed to pass an empty bytes value
     ],
     {
       id: "PassNFT",

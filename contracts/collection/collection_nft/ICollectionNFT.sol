@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./../collection_config/ICollectionConfig.sol";
 import "../../managers/random/IRandomConsumer.sol";
 import "./IERC7496.sol";
+import "./../../libraries/Types.sol";
 
 interface ICollectionNFT is IAccessControl, IERC721, IERC7496, IRandomConsumer {
 	function getNFTDetails(uint256 tokenId) external view returns (Types.NFT memory, Types.Trait[] memory);

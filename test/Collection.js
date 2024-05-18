@@ -34,16 +34,17 @@ describe("NFT collectionNFT", function () {
       simulateMockResponse,
     } = await deployContractsInfrastructure();
 
+    const collectionName = "Ninjas of Sydney";
+
     const { collection, collectionNFT, CollectionConfigFactory } =
       await deployCollection(
         0,
-        "Ninjas of Sydney",
+        collectionName,
         setupCharacterAttributes,
         nftRandomManager,
         shopManager,
         gameManager,
         passManager,
-        passConfig,
         passNFT
       );
 
@@ -65,85 +66,102 @@ describe("NFT collectionNFT", function () {
       passConfig,
       CollectionConfigFactory,
       simulateMockResponse,
+      collectionName,
     };
   }
 
   describe("Test Forge", function () {
-    it("Mints a Pass and updates it once collection is minted", async function () {
+    it("Can't edit pass after it has been used", async function () {
+      const { passManager, passNFT, collectionNFT } = await deployContracts();
+
+      await expect(
+        passManager.setPassCollectionAddress(
+          passNFT,
+          0,
+          collectionNFT,
+          new Uint8Array()
+        )
+      ).to.be.revertedWith("Trying to set collection address on a used pass");
+    });
+
+    it("Can't deploy another collection after a pass has been used", async function () {
       const {
         passManager,
         passNFT,
-        passConfig,
-        otherAccount,
-        CollectionConfigFactory,
+        collectionNFT,
+        nftRandomManager,
+        shopManager,
+        gameManager,
       } = await deployContracts();
 
-      const collectionName = "Samurais of Sydney";
-      let initialCollectionValue, finalCollectionValue;
-      let initialCollectionAddressValue, finalCollectionAddressValue;
+      await expect(
+        deployCollection(
+          0,
+          "collectionName",
+          setupCharacterAttributes,
+          nftRandomManager,
+          shopManager,
+          gameManager,
+          passManager,
+          passNFT
+        )
+      ).to.be.revertedWith("This pass has been used already");
+    });
 
-      const knownFields = await passConfig.getKnownFields();
+    it("Pass that was used to deploy the collection has both the collection confg name and collection nft address correctly set", async function () {
+      const { passNFT, passConfig, collectionNFT, collectionName } =
+        await deployContracts();
+      const knownFields = await passConfig.getPassTraits();
 
-      //Mint a pass for otherAccount
-      await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
-      initialCollectionValue = bytes32ToString(
-        await passNFT.getTraitValue(1, knownFields.collectionLabel)
+      const passTraitCollectionName = bytes32ToString(
+        await passNFT.getTraitValue(0, knownFields.collectionLabel)
       );
-
-      initialCollectionValue = bytes32ToString(
-        await passNFT.getTraitValue(1, knownFields.collectionLabel)
-      );
-      initialCollectionAddressValue = bytes32ToString(
-        await passNFT.getTraitValue(1, knownFields.collectionAddressLabel)
-      );
-
-      const samuraisCollectionName = stringToBytes32("Samurais of Sydney");
-
-      //Sign a message
-      const TEST_MESSAGE = "Samurais of Sydney";
-      const hashedMessage = ethers.hashMessage(TEST_MESSAGE);
-      const signature = await otherAccount.signMessage(TEST_MESSAGE);
-
-      await CollectionConfigFactory.deploy(
-        passManager.target,
-        passNFT.target,
-        1,
-        hashedMessage,
-        signature,
-        samuraisCollectionName
-      );
-
-      finalCollectionValue = bytes32ToString(
-        await passNFT.getTraitValue(1, knownFields.collectionLabel)
-      );
-
-      finalCollectionAddressValue = await passNFT.getTraitValue(
-        1,
+      const passTraitCollectionNFTAddress = await passNFT.getTraitValue(
+        0,
         knownFields.collectionAddressLabel
       );
 
-      finalCollectionAddressValue = finalCollectionAddressValue.replace(
-        /0+$/,
-        ""
-      );
+      let passTraitCollectionNFTAddressWithoutExtraZeros =
+        passTraitCollectionNFTAddress.replace(/0+$/, "");
 
       expect(
-        initialCollectionValue,
-        "The initial collection value for pass collection is not empty "
-      ).to.equal("");
-      expect(
-        finalCollectionValue,
-        "The initial collection value for pass collection should have value "
+        passTraitCollectionName,
+        "The collection name should have value "
       ).to.equal(collectionName);
 
       expect(
-        initialCollectionValue,
-        "The initial collection address value for pass collection is not empty "
+        passTraitCollectionNFTAddressWithoutExtraZeros.toLowerCase(),
+        "The final collection address should have value "
+      ).to.equal(collectionNFT.target.toLowerCase());
+    });
+
+    it("When a pass is minted his traits are set to empty", async function () {
+      const { passManager, passNFT, passConfig, otherAccount } =
+        await deployContracts();
+
+      let newPassCollectionName, newPassCollectionAddress;
+
+      const knownFields = await passConfig.getPassTraits();
+
+      //Mint a pass for otherAccount
+      await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 2");
+
+      newPassCollectionName = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionLabel)
+      );
+      newPassCollectionAddress = bytes32ToString(
+        await passNFT.getTraitValue(1, knownFields.collectionAddressLabel)
+      );
+
+      //New pass has both name of collection and addres set to empty
+      expect(
+        newPassCollectionName,
+        "The initial collection name for pass collection is not empty "
       ).to.equal("");
       expect(
-        finalCollectionAddressValue.toLowerCase(),
-        "The initial collection address value for pass collection should have value "
-      ).to.equal(passNFT.target.toLowerCase());
+        newPassCollectionAddress,
+        "The initial collection address for pass collection is not empty "
+      ).to.equal("");
     });
     it("Is able to get the token URI ", async function () {
       const {

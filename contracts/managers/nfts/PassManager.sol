@@ -11,11 +11,13 @@ import "../../libraries/Types.sol";
 import "../../libraries/Constants.sol";
 import "../../libraries/Utils.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "hardhat/console.sol";
+import "../../libraries/SignatureVerifier.sol";
 
 contract PassManager is NFTManagerBase {
 	using ECDSA for bytes32;
 	AggregatorV3Interface internal dataFeed;
+
+	mapping(address => mapping(uint256 => bool)) passUsed;
 
 	constructor(address AvaxToUSDAggregatorAddress) NFTManagerBase() {
 		dataFeed = AggregatorV3Interface(AvaxToUSDAggregatorAddress);
@@ -35,10 +37,25 @@ contract PassManager is NFTManagerBase {
 		return avaxWeiNeeded;
 	}
 
+	function isPassUsed(address passAddress, uint passId) public view returns (bool) {
+		return passUsed[passAddress][passId];
+	}
+
+	function setPassCollectionAddress(address passAddress, uint passId, address collectionNFTAddress, bytes memory signature) external {
+		require(!isPassUsed(passAddress, passId), "Trying to set collection address on a used pass");
+		ICollectionNFT passNFT = getCollectionContract(passAddress);
+		bytes32 collectionName = passNFT.getTraitValue(passId, Constants.PASS_COLLECTION_LABEL);
+		address passOwner = passNFT.getOwner(passId);
+
+		require(SignatureVerifier.verifiySignatureFromBytes32(passOwner, signature, passId, collectionName), "The pass is not owned by the sender!");
+
+		passNFT.setTrait(passId, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_ADDRESS_LABEL, bytes32(abi.encodePacked(collectionNFTAddress))));
+		passUsed[passAddress][passId] = true;
+	}
+
 	function setPassUsed(address passAddress, uint passId, bytes32 collectionName) external onlyAuthorizedCollections(passAddress) {
 		ICollectionNFT collection = getCollectionContract(passAddress);
 		collection.setTrait(passId, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_LABEL, collectionName));
-		collection.setTrait(passId, Types.Trait(true, Types.TraitType.Text, Constants.PASS_COLLECTION_ADDRESS_LABEL, bytes32(abi.encodePacked(passAddress))));
 	}
 
 	function getCollectionPrice(address nftCollectionAddress) external view onlyAuthorizedCollections(nftCollectionAddress) returns (uint256) {
@@ -68,39 +85,20 @@ contract PassManager is NFTManagerBase {
 		return answer;
 	}
 
-	modifier verifyPassValidity(address nftCollectionAddress, uint tokenId) {
-		_;
-	}
-
-	function isAuthorized(
-		address nftCollectionAddress,
-		uint tokenId,
-		bytes32 hashedMessage,
-		bytes memory signature
-	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, tokenId) {
-		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
-		if (bytes32(0) != collection.getTraitValue(tokenId, Constants.PASS_COLLECTION_LABEL)) {
-			revert("This pass has been used already");
-		}
-		address passOwner = collection.getOwner(tokenId);
-		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
-
-		require(isSignatureVerified, "The pass is not owned by the sender!");
-	}
-
-	function isAuthorizedV2(
-		address nftCollectionAddress,
-		uint passId,
-		//string memory originalMessage,
-		bytes32 collectionName,
-		bytes memory signature
-	) external view onlyAuthorizedCollections(nftCollectionAddress) verifyPassValidity(nftCollectionAddress, passId) {
-		ICollectionNFT collection = getCollectionContract(nftCollectionAddress);
+	function isAuthorized(address passAddress, uint passId, bytes32 hashedMessage, bytes memory signature) external view {
+		require(!isPassUsed(passAddress, passId), "This pass has been used already");
+		ICollectionNFT collection = getCollectionContract(passAddress);
 		address passOwner = collection.getOwner(passId);
-		// bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(bytes(originalMessage));
-		bytes32 hashedMessage = MessageHashUtils.toEthSignedMessageHash(abi.encodePacked("0x", collectionName));
 		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
 
 		require(isSignatureVerified, "The pass is not owned by the sender!");
+	}
+
+	function isAuthorizedV2(address passAddress, uint passId, bytes32 collectionName, bytes memory signature) external view {
+		require(!isPassUsed(passAddress, passId), "This pass has been used already");
+		ICollectionNFT collection = getCollectionContract(passAddress);
+		address passOwner = collection.getOwner(passId);
+
+		require(SignatureVerifier.verifiySignatureFromBytes32(passOwner, signature, passId, collectionName), "The pass is not owned by the sender!");
 	}
 }
