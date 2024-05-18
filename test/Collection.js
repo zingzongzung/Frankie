@@ -163,6 +163,46 @@ describe("NFT collectionNFT", function () {
         "The initial collection address for pass collection is not empty "
       ).to.equal("");
     });
+
+    it("Get tokens by owner", async function () {
+      const {
+        passManager,
+        passNFT,
+        collectionNFT,
+        nftRandomManager,
+        shopManager,
+        gameManager,
+      } = await deployContracts();
+
+      const [owner, otherAccount] = await ethers.getSigners();
+
+      await passManager.mintNFT(passNFT.target, "Pass 1");
+      await passManager.mintNFT(passNFT.target, "Pass 2");
+      await passManager.mintNFT(passNFT.target, "Pass 3");
+
+      const ownerPasses = JSON.stringify(
+        await passNFT.getTokensOwnedBy(owner),
+        bigIntParser
+      );
+
+      await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 4");
+      await passManager.connect(otherAccount).mintNFT(passNFT.target, "Pass 5");
+
+      const otherAccountPasses = JSON.stringify(
+        await passNFT.getTokensOwnedBy(otherAccount),
+        bigIntParser
+      );
+
+      expect(
+        ownerPasses,
+        "The generated trait list is not as expected "
+      ).to.equal('["0","1","2","3"]');
+      expect(
+        otherAccountPasses,
+        "The generated trait list is not as expected "
+      ).to.equal('["4","5"]');
+    });
+
     it("Is able to get the token URI ", async function () {
       const {
         collectionNFT,

@@ -27,7 +27,6 @@ describe("Surf Game", function () {
       shopManager,
       gameManager,
       passManager,
-      passConfig,
       passNFT,
       simulateMockResponse,
     } = await deployContractsInfrastructure();
