@@ -56,11 +56,24 @@ const resources = {
 };
 
 const setSmartContract = (contractName) => {
-  const source = JSON.parse(
-    fs
-      .readFileSync(path.resolve(__dirname, resources[contractName].artifact))
-      .toString()
-  );
+  const source = (() => {
+    try {
+      return JSON.parse(
+        fs
+          .readFileSync(
+            path.resolve(__dirname, resources[contractName].artifact)
+          )
+          .toString()
+      );
+    } catch (e) {
+      return "";
+    }
+  })();
+
+  if (source === "") {
+    console.error(`Error: ${contractName} Details: Missing Source File`);
+    return;
+  }
 
   const abiAsExpected = { abi: source.abi };
   const jsonABI = JSON.stringify(abiAsExpected) || "";
