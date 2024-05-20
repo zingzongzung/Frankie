@@ -38,6 +38,7 @@ const resources = {
     artifact:
       "./../../artifacts/contracts/games/surf/SurfGame.sol/SurfGame.json",
     type: 8,
+    isGame: true,
   },
   PassConfig: {
     artifact:
@@ -120,11 +121,17 @@ module.exports = {
 };
 
 const main = () => {
-  const param = process.argv.length > 2 ? process.argv[2] : "ALL";
+  const param = process.argv.length > 2 ? process.argv[2] : "ALL_NO_GAMES";
 
   if (param === "ALL") {
     Object.keys(resources).forEach((key) => {
       setSmartContract(key);
+    });
+  } else if (param === "ALL_NO_GAMES") {
+    Object.keys(resources).forEach((key) => {
+      if (!resources[key].isGame) {
+        setSmartContract(key);
+      }
     });
   } else if (param === "help") {
     console.log(resources);
