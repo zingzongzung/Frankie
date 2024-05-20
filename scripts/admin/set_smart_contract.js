@@ -56,12 +56,6 @@ const resources = {
 };
 
 const setSmartContract = (contractName) => {
-  const contractAddress = getContractAddress(contractName) || "";
-  if (resources[contractName].needsAddress && contractAddress === "") {
-    console.error(`Error: ${contractName} Details: Missing Address`);
-    return;
-  }
-
   const source = JSON.parse(
     fs
       .readFileSync(path.resolve(__dirname, resources[contractName].artifact))
@@ -69,10 +63,30 @@ const setSmartContract = (contractName) => {
   );
 
   const abiAsExpected = { abi: source.abi };
+  const jsonABI = JSON.stringify(abiAsExpected) || "";
+
+  const contractAddress = getContractAddress(contractName) || "";
+  const sourceBytecode = source.bytecode || "";
+
+  //Run Validations
+  if (resources[contractName].needsAddress && contractAddress === "") {
+    console.error(`Error: ${contractName} Details: Missing Address`);
+    return;
+  }
+
+  if (!resources[contractName].needsAddress && sourceBytecode === "") {
+    console.error(`Error: ${contractName} Details: Missing Bytecode`);
+    return;
+  }
+
+  if (jsonABI === "") {
+    console.error(`Error: ${contractName} Details: Missing ABI`);
+    return;
+  }
 
   const requestData = {
-    ABI: JSON.stringify(abiAsExpected),
-    ByteCode: source.bytecode || "",
+    ABI: jsonABI,
+    ByteCode: sourceBytecode,
     ContractAddress: contractAddress,
     SmartContractType: resources[contractName].type || 0,
   };
