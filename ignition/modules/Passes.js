@@ -4,16 +4,20 @@ const randomManagerModule = require("./RandomManager.js");
 const passManagerModule = require("./PassManager.js");
 
 //npx hardhat ignition deploy ignition/modules/Passes.js --network fuji --reset
+const SetPassConfigModule = buildModule("SetPassConfig", (m) => {
+  //Define Pass Configuration
+  const passConfig = m.contract("PassConfig");
+  m.call(passConfig, "setCollectionAttributes", [1000, 1024, 1024]);
+
+  return { passConfig };
+});
+
 module.exports = buildModule("Passes", (m) => {
+  const { passConfig } = m.useModule(SetPassConfigModule);
   const { nftRandomManager } = m.useModule(randomManagerModule);
   const { passManager } = m.useModule(passManagerModule);
 
-  //Define Pass Configuration
-  const passConfig = m.contract("PassConfig");
-
-  //Add collection Name
-  //Add collection Address
-  m.call(passConfig, "setCollectionAttributes", [0, 100, 100]);
+  m.call(passConfig, "closeCollection");
 
   //Define Pass NFT
   const passNFT = m.contract(

@@ -39,6 +39,11 @@ const resources = {
       "./../../artifacts/contracts/games/surf/SurfGame.sol/SurfGame.json",
     type: 8,
   },
+  PassConfig: {
+    artifact:
+      "./../../artifacts/contracts/collection/collection_config/PassConfig.sol/PassConfig.json",
+    type: 9,
+  },
 };
 
 const setSmartContract = (contractName, secretsURL) => {
