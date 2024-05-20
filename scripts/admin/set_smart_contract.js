@@ -7,47 +7,61 @@ const resources = {
     artifact:
       "./../../artifacts/contracts/collection/collection_nft/CollectionNFT.sol/CollectionNFT.json",
     type: 1,
+    needsAddress: false,
   },
   CollectionConfig: {
     artifact:
       "./../../artifacts/contracts/collection/collection_config/CollectionConfig.sol/CollectionConfig.json",
     type: 2,
+    needsAddress: false,
   },
 
   NFTRandomManager: {
     artifact:
       "./../../artifacts/contracts/managers/random/NFTRandomManager.sol/NFTRandomManager.json",
     type: 3,
+    needsAddress: true,
   },
   ShopManager: {
     artifact:
       "./../../artifacts/contracts/managers/nfts/ShopManager.sol/ShopManager.json",
     type: 4,
+    needsAddress: true,
   },
   PassManager: {
     artifact:
       "./../../artifacts/contracts/managers/nfts/PassManager.sol/PassManager.json",
     type: 5,
+    needsAddress: true,
   },
   PassNFT: {
     artifact:
       "./../../artifacts/contracts/collection/collection_nft/CollectionNFT.sol/CollectionNFT.json",
     type: 7,
+    needsAddress: true,
   },
   SurfGame: {
     artifact:
       "./../../artifacts/contracts/games/surf/SurfGame.sol/SurfGame.json",
     type: 8,
     isGame: true,
+    needsAddress: true,
   },
   PassConfig: {
     artifact:
       "./../../artifacts/contracts/collection/collection_config/PassConfig.sol/PassConfig.json",
     type: 9,
+    needsAddress: true,
   },
 };
 
-const setSmartContract = (contractName, secretsURL) => {
+const setSmartContract = (contractName) => {
+  const contractAddress = getContractAddress(contractName) || "";
+  if (resources[contractName].needsAddress && contractAddress === "") {
+    console.error(`Error: ${contractName} Details: Missing Address`);
+    return;
+  }
+
   const source = JSON.parse(
     fs
       .readFileSync(path.resolve(__dirname, resources[contractName].artifact))
@@ -59,7 +73,7 @@ const setSmartContract = (contractName, secretsURL) => {
   const requestData = {
     ABI: JSON.stringify(abiAsExpected),
     ByteCode: source.bytecode || "",
-    ContractAddress: getContractAddress(contractName) || "",
+    ContractAddress: contractAddress,
     SmartContractType: resources[contractName].type || 0,
   };
 
@@ -88,7 +102,9 @@ const setSmartContract = (contractName, secretsURL) => {
   )
     .then((response) => {
       if (!response.ok) {
-        throw new Error("Network response was not ok " + response.statusText);
+        console.error("Network response was not ok " + response.statusText);
+      } else {
+        console.log(`Sent: ${contractName}`);
       }
     })
     .catch((error) =>
