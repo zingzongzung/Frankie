@@ -120,21 +120,51 @@ module.exports = {
   setSmartContract,
 };
 
-const main = () => {
-  const param = process.argv.length > 2 ? process.argv[2] : "ALL_NO_GAMES";
+const commands = {
+  help: { name: "help", description: "See command options" },
+  games: { name: "games", description: "Send all games contract information" },
+  baseContracts: {
+    name: "base",
+    description: "Send all base contracts information",
+  },
+  all: {
+    name: "all",
+    description: "Send all base contracts + games contracts information",
+  },
+};
 
-  if (param === "ALL") {
+const main = () => {
+  const baseParam =
+    process.argv.length > 2 ? process.argv[2] : commands.baseContracts.name;
+  const param = baseParam.replace("--", "");
+
+  if (param === commands.games.name) {
     Object.keys(resources).forEach((key) => {
-      setSmartContract(key);
+      if (resources[key].isGame) {
+        setSmartContract(key);
+      }
     });
-  } else if (param === "ALL_NO_GAMES") {
+  } else if (param === commands.baseContracts.name) {
     Object.keys(resources).forEach((key) => {
       if (!resources[key].isGame) {
         setSmartContract(key);
       }
     });
-  } else if (param === "help") {
-    console.log(resources);
+  } else if (param === commands.all.name) {
+    Object.keys(resources).forEach((key) => {
+      setSmartContract(key);
+    });
+  } else if (param === commands.help.name) {
+    console.log("\n\nGeneral:");
+    Object.keys(commands).forEach((key) => {
+      console.log(
+        `Use --${commands[key].name} to ${commands[key].description}`
+      );
+    });
+    console.log("\n\nBy Contract:");
+    Object.keys(resources).forEach((key) => {
+      console.log(`Use: --${key} to send only this contract`);
+    });
   } else {
     setSmartContract(param);
   }
