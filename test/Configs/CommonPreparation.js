@@ -43,6 +43,7 @@ async function deployContractsInfrastructure() {
   const PassConfigFactory = await ethers.getContractFactory("PassConfig");
   const passConfig = await PassConfigFactory.deploy();
   await passConfig.setCollectionAttributes(0, 0, 0);
+  await passConfig.closeCollection();
 
   const PassNFTFactory = await ethers.getContractFactory("CollectionNFT");
   const passNFT = await PassNFTFactory.deploy(
@@ -179,7 +180,8 @@ async function deployCollection(
   shopManager,
   gameManager,
   passManager,
-  passNFT
+  passNFT,
+  collectionPrice
 ) {
   const [owner] = await ethers.getSigners();
 
@@ -206,7 +208,12 @@ async function deployCollection(
   );
 
   //Runs the function to add Traits on collection
-  addTraitsToCollectionFunction && addTraitsToCollectionFunction(collection);
+  addTraitsToCollectionFunction &&
+    (await addTraitsToCollectionFunction(collection));
+
+  await collection.setPrice(collectionPrice || 0);
+
+  await collection.closeCollection();
 
   //Deploy the NFT
   const CollectionNFTFactory = await ethers.getContractFactory("CollectionNFT");

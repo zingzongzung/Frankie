@@ -32,9 +32,11 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 		return managedCollections[nftCollectionAddress];
 	}
 
-	function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
-		payable(msg.sender).transfer(address(this).balance);
-	}
+	function withdraw() external virtual;
+
+	// function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
+	// 	payable(msg.sender).transfer(address(this).balance);
+	// }
 
 	//internal
 	function getCollectionContract(address nftCollectionAddress) internal pure returns (ICollectionNFT collection) {
@@ -44,6 +46,9 @@ abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard 
 	function getCollectionConfigContract(ICollectionNFT collection) internal view returns (ICollectionConfig collectionConfig) {
 		collectionConfig = ICollectionConfig(collection.getCollectionAddress());
 	}
+
+	// Fallback function to receive Ether
+	receive() external payable {}
 
 	modifier onlyAuthorizedCollections(address nftCollectionAddress) {
 		require(managedCollections[nftCollectionAddress], string(abi.encodePacked("Collection not managed: ", nftCollectionAddress.toHexString())));

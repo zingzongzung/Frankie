@@ -43,4 +43,10 @@ interface ICollectionConfig {
 	function generateNFT(uint genes) external view returns (Types.Trait[] memory);
 
 	function getPassSettings() external view returns (bool, Types.Pass memory, PassManager);
+
+	function setPrice(uint _collectionPrice) external;
+
+	function isCollectionOwner(address addressToVerify) external view returns (bool);
+
+	function getCollectionOwner() external view returns (address);
 }

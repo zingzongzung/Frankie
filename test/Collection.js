@@ -20,7 +20,7 @@ describe("NFT collectionNFT", function () {
    *
    * @returns all deployed contracts
    */
-  async function deployContracts() {
+  async function deployContracts(collectionPrice) {
     const [owner, otherAccount] = await ethers.getSigners();
 
     const {
@@ -45,7 +45,8 @@ describe("NFT collectionNFT", function () {
         shopManager,
         gameManager,
         passManager,
-        passNFT
+        passNFT,
+        collectionPrice
       );
 
     const expectedToken =
@@ -70,7 +71,12 @@ describe("NFT collectionNFT", function () {
     };
   }
 
-  describe("Test Forge", function () {
+  /**
+   *
+   * Test scenarios for pass and pass usage
+   *
+   */
+  describe("Pass Management", function () {
     it("Can't edit pass after it has been used", async function () {
       const { passManager, passNFT, collectionNFT } = await deployContracts();
 
@@ -163,7 +169,67 @@ describe("NFT collectionNFT", function () {
         "The initial collection address for pass collection is not empty "
       ).to.equal("");
     });
+  });
 
+  /**
+   *
+   * Tests collection permissions
+   *
+   */
+  describe("Collection permissions", function () {
+    it("Can't add traits after colection closed", async function () {
+      const { collection } = await deployContracts();
+
+      await expect(
+        collection.addTextTrait(
+          stringToBytes32("TextTrait"),
+          100,
+          stringToBytes32("Default Value")
+        )
+      ).to.be.revertedWith("This collection is already closed");
+    });
+
+    it("Can't change price after colection closed", async function () {
+      const [owner, otherAccount] = await ethers.getSigners();
+      const { collection } = await deployContracts();
+
+      await expect(
+        collection.connect(otherAccount).setPrice(100)
+      ).to.be.revertedWith(
+        "Not the owner of the pass that has the owneship of this collection"
+      );
+    });
+
+    it("Can't change price of the pass", async function () {
+      const [owner, otherAccount] = await ethers.getSigners();
+      const { passConfig } = await deployContracts();
+
+      await expect(passConfig.connect(otherAccount).setPrice(100)).to.be
+        .reverted;
+    });
+
+    it("Can change price of a collection if is the owner of the pass that minted it", async function () {
+      const [owner, otherAccount] = await ethers.getSigners();
+      const { collection, passNFT } = await deployContracts();
+
+      await passNFT.safeTransferFrom(owner, otherAccount, 0);
+
+      await expect(collection.connect(otherAccount).setPrice(100)).not.to.be
+        .reverted;
+    });
+    it("Can change the price of pass if it is its owner", async function () {
+      const { passConfig } = await deployContracts();
+
+      await expect(passConfig.setPrice(100)).not.to.be.reverted;
+    });
+  });
+
+  /**
+   *
+   * Tests the collection generation
+   *
+   */
+  describe("Collection generation", function () {
     it("Get tokens by owner", async function () {
       const {
         passManager,
@@ -172,7 +238,7 @@ describe("NFT collectionNFT", function () {
         nftRandomManager,
         shopManager,
         gameManager,
-      } = await deployContracts();
+      } = await deployContracts(100000000000);
 
       const [owner, otherAccount] = await ethers.getSigners();
 
@@ -213,7 +279,7 @@ describe("NFT collectionNFT", function () {
       } = await deployContracts();
 
       await shopManager.mintNFT(collectionNFT.target, `Token `, {
-        value: ethers.parseEther("0.9999"),
+        value: ethers.parseEther("0.000000000000001"),
       });
 
       await simulateMockResponse();
@@ -329,7 +395,6 @@ describe("NFT collectionNFT", function () {
         expectedToken,
       } = await deployContracts();
 
-      await collection.setCollectionAttributes(0, 0, 0);
       const result = await shopManager.getCollectionPrice(collectionNFT.target);
 
       await shopManager.mintNFT(collectionNFT.target, `Token `);
@@ -341,10 +406,142 @@ describe("NFT collectionNFT", function () {
         typeof value === "bigint" ? value.toString() : value
       );
 
-      expect(
-        nftJSONString,
-        "Attributes for gene should have strenght 100 and arms blue and weapon and"
-      ).to.equal(expectedToken);
+      expect(nftJSONString, "Attributes not as expected").to.equal(
+        expectedToken
+      );
+    });
+  });
+
+  /**
+   *
+   * Tests the collection royalties
+   *
+   */
+  describe("Collection Royalties", function () {
+    it("Can't mint a collection if not enough funds are sent", async function () {
+      const priceInUSD = 20000; //200 dollars
+      const { collectionNFT, shopManager } = await deployContracts(priceInUSD);
+
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+      const priceCollectionInAvax = Number(result) / 10 ** 18;
+
+      await expect(
+        shopManager.mintNFT(collectionNFT.target, `Token `, {
+          value: ethers.parseEther("2"),
+        })
+      ).to.be.revertedWith("Not enough funds sent!");
+    });
+
+    it("Can mint a collection when enough funds are sent", async function () {
+      const priceInUSD = 20000; //200 dollars
+      const { collectionNFT, shopManager } = await deployContracts(priceInUSD);
+
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+      const priceCollectionInAvax = Number(result) / 10 ** 18;
+
+      await expect(
+        await shopManager.mintNFT(collectionNFT.target, `Token `, {
+          value: ethers.parseEther(
+            roundUpToDecimalPlace(priceCollectionInAvax, 10).toString()
+          ),
+        })
+      ).to.not.be.reverted;
+    });
+
+    it("Royalties are paid", async function () {
+      const [owner, otherAccount] = await ethers.getSigners();
+      const priceInUSD = 20000; //200 dollars
+      const { collectionNFT, shopManager } = await deployContracts(priceInUSD);
+
+      const initialOwnerBalance = await ethers.provider.getBalance(
+        owner.address
+      );
+
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+      const priceCollectionInAvax = Number(result) / 10 ** 18;
+
+      await shopManager
+        .connect(otherAccount)
+        .mintNFT(collectionNFT.target, `Token `, {
+          value: ethers.parseEther(
+            roundUpToDecimalPlace(priceCollectionInAvax, 10).toString()
+          ),
+        });
+
+      const afterOwnerBalance = await ethers.provider.getBalance(owner.address);
+      expect(afterOwnerBalance).to.be.greaterThan(initialOwnerBalance);
+    });
+
+    it("Royalties are paid to the person that owns the pass and only that", async function () {
+      const [owner, ownerOfPass, mintingAddress] = await ethers.getSigners();
+      const priceInUSD = 20000; //200 dollars
+      const { collectionNFT, shopManager, passNFT } = await deployContracts(
+        priceInUSD
+      );
+
+      //Transfer pass to new owner
+      await passNFT.safeTransferFrom(owner, ownerOfPass, 0);
+
+      const initialOwnerBalance = await ethers.provider.getBalance(
+        owner.address
+      );
+      const initialPassOwnerBalance = await ethers.provider.getBalance(
+        ownerOfPass.address
+      );
+
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+      const priceCollectionInAvax = Number(result) / 10 ** 18;
+
+      await shopManager
+        .connect(mintingAddress)
+        .mintNFT(collectionNFT.target, `Token `, {
+          value: ethers.parseEther(
+            roundUpToDecimalPlace(priceCollectionInAvax, 10).toString()
+          ),
+        });
+
+      const afterOwnerBalance = await ethers.provider.getBalance(owner.address);
+      const afterPassOwnerBalance = await ethers.provider.getBalance(
+        ownerOfPass.address
+      );
+
+      expect(initialOwnerBalance).to.be.eq(afterOwnerBalance);
+      expect(afterPassOwnerBalance).to.be.greaterThan(initialPassOwnerBalance);
+    });
+
+    it("Shop manager fees are whitdrawable only once", async function () {
+      const [owner, ownerOfPass, mintingAddress] = await ethers.getSigners();
+      const priceInUSD = 20000; //200 dollars
+      const { collectionNFT, shopManager, passNFT } = await deployContracts(
+        priceInUSD
+      );
+
+      //Transfer pass to new owner
+      await passNFT.safeTransferFrom(owner, ownerOfPass, 0);
+
+      const initialOwnerBalance = await ethers.provider.getBalance(
+        owner.address
+      );
+
+      const result = await shopManager.getCollectionPrice(collectionNFT.target);
+      const priceCollectionInAvax = Number(result) / 10 ** 18;
+
+      await shopManager
+        .connect(mintingAddress)
+        .mintNFT(collectionNFT.target, `Token `, {
+          value: ethers.parseEther(
+            roundUpToDecimalPlace(priceCollectionInAvax, 10).toString()
+          ),
+        });
+
+      await shopManager.withdraw();
+
+      const afterOwnerBalance = await ethers.provider.getBalance(owner.address);
+
+      expect(afterOwnerBalance).to.be.greaterThan(initialOwnerBalance);
+      await expect(shopManager.withdraw()).to.be.revertedWith(
+        "There are no taxes to be whitdrawn"
+      );
     });
   });
 });
@@ -352,3 +549,8 @@ describe("NFT collectionNFT", function () {
 const bigIntParser = (key, value) => {
   return typeof value === "bigint" ? value.toString() : value;
 };
+
+function roundUpToDecimalPlace(number, decimalPlaces) {
+  const factor = Math.pow(10, decimalPlaces);
+  return Math.ceil(number * factor) / factor;
+}

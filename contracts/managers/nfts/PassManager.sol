@@ -85,20 +85,15 @@ contract PassManager is NFTManagerBase {
 		return answer;
 	}
 
-	function isAuthorized(address passAddress, uint passId, bytes32 hashedMessage, bytes memory signature) external view {
-		require(!isPassUsed(passAddress, passId), "This pass has been used already");
-		ICollectionNFT collection = getCollectionContract(passAddress);
-		address passOwner = collection.getOwner(passId);
-		bool isSignatureVerified = hashedMessage.recover(signature) == passOwner;
-
-		require(isSignatureVerified, "The pass is not owned by the sender!");
-	}
-
-	function isAuthorizedV2(address passAddress, uint passId, bytes32 collectionName, bytes memory signature) external view {
+	function isAuthorized(address passAddress, uint passId, bytes32 collectionName, bytes memory signature) external view {
 		require(!isPassUsed(passAddress, passId), "This pass has been used already");
 		ICollectionNFT collection = getCollectionContract(passAddress);
 		address passOwner = collection.getOwner(passId);
 
 		require(SignatureVerifier.verifiySignatureFromBytes32(passOwner, signature, passId, collectionName), "The pass is not owned by the sender!");
+	}
+
+	function withdraw() external override onlyRole(DEFAULT_ADMIN_ROLE) {
+		payable(msg.sender).transfer(address(this).balance);
 	}
 }

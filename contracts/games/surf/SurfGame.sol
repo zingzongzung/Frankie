@@ -411,4 +411,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 
 		return level;
 	}
+
+	function withdraw() external override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }

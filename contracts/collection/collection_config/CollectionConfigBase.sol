@@ -4,8 +4,9 @@ pragma solidity ^0.8.24;
 import "./ICollectionConfig.sol";
 import "../../libraries/Generator.sol";
 import "../../managers/nfts/PassManager.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract CollectionConfigBase is ICollectionConfig {
+abstract contract CollectionConfigBase is ICollectionConfig, Ownable {
 	//Collection attributes
 	bytes32 collectionName;
 	uint256 collectionPrice;
@@ -36,7 +37,8 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 	bool isCollectionClosed;
 	bool randomTraits;
 
-	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external {
+	function setCollectionAttributes(uint256 _collectionPrice, uint16 _svgBoxHeight, uint16 _svgBoxWidth) external onlyOwner {
+		require(!isCollectionClosed, "This collection is already closed");
 		collectionPrice = _collectionPrice;
 		svgBoxHeight = _svgBoxHeight;
 		svgBoxWidth = _svgBoxWidth;
@@ -53,6 +55,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		Types.TraitType traitType,
 		uint8 traitChance
 	) {
+		require(!isCollectionClosed, "This collection is already closed");
 		require(traitChance > 0 && traitChance <= 100, "Chance must be a positive number less than 100");
 		traitTypes[traitKey] = traitType;
 		traitChances[traitKey] = traitChance - 1; //0 will represent 1% and 99 100%
@@ -66,7 +69,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		uint8 traitChance,
 		bytes32[] memory valueLabels,
 		uint8[] memory chances
-	) public override addBaseTrait(traitKey, Types.TraitType.Options, traitChance) {
+	) public override onlyOwner addBaseTrait(traitKey, Types.TraitType.Options, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(NumberUtils.sum(chances) == 100);
 		traitOptionChances[traitKey] = chances;
@@ -79,7 +82,7 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		bytes32[] memory valueLabels,
 		uint8[] memory chances,
 		string[] memory images
-	) public override addBaseTrait(traitKey, Types.TraitType.OptionsWithImage, traitChance) {
+	) public override onlyOwner addBaseTrait(traitKey, Types.TraitType.OptionsWithImage, traitChance) {
 		require(chances.length == valueLabels.length, "Invalid arrays");
 		require(NumberUtils.sum(chances) == 100);
 		for (uint256 currentIndex; currentIndex < valueLabels.length; currentIndex++) {
@@ -90,13 +93,13 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		traitOptionLabels[traitKey] = valueLabels;
 	}
 
-	function addNumberTrait(bytes32 traitKey, uint8 traitChance, uint8 min, uint8 max) public override addBaseTrait(traitKey, Types.TraitType.Number, traitChance) {
+	function addNumberTrait(bytes32 traitKey, uint8 traitChance, uint8 min, uint8 max) public override onlyOwner addBaseTrait(traitKey, Types.TraitType.Number, traitChance) {
 		require(min <= max, "Min should be less than max");
 		traitNumberMin[traitKey] = min;
 		traitNumberMax[traitKey] = max;
 	}
 
-	function addTextTrait(bytes32 traitKey, uint8 traitChance, bytes32 defaultValue) public override addBaseTrait(traitKey, Types.TraitType.Text, traitChance) {
+	function addTextTrait(bytes32 traitKey, uint8 traitChance, bytes32 defaultValue) public override onlyOwner addBaseTrait(traitKey, Types.TraitType.Text, traitChance) {
 		traitDefaultValue[traitKey] = defaultValue;
 	}
 
@@ -144,5 +147,15 @@ abstract contract CollectionConfigBase is ICollectionConfig {
 		return randomTraits;
 	}
 
+	function closeCollection() external onlyOwner {
+		isCollectionClosed = true;
+	}
+
 	function getPassSettings() external view virtual override returns (bool, Types.Pass memory, PassManager);
+
+	function setPrice(uint _collectionPrice) external virtual override;
+
+	function isCollectionOwner(address addresToVerify) external view virtual override returns (bool);
+
+	function getCollectionOwner() external view virtual override returns (address);
 }

@@ -32,4 +32,8 @@ contract GameManager is NFTManagerBase {
 	function getProcessedRequests() external view returns (uint256[] memory, uint256[] memory) {
 		return (requests, processedRequests);
 	}
+
+	function withdraw() external override onlyRole(DEFAULT_ADMIN_ROLE) {
+		payable(msg.sender).transfer(address(this).balance);
+	}
 }

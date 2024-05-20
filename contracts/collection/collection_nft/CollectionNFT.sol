@@ -16,16 +16,16 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	string private tokenURIBaseURL;
 
-	mapping(uint => Types.NFT) nftDetails;
-	mapping(uint => mapping(bytes32 => Types.Trait)) nftTraits;
-	mapping(uint => mapping(uint => bytes32)) nftTraitsKeys;
-	mapping(uint => uint) nftTraitsSize;
-	mapping(uint => address) tokenMinterAddress;
+	mapping(uint => Types.NFT) private nftDetails;
+	mapping(uint => mapping(bytes32 => Types.Trait)) private nftTraits;
+	mapping(uint => mapping(uint => bytes32)) private nftTraitsKeys;
+	mapping(uint => uint) private nftTraitsSize;
+	mapping(uint => address) private tokenMinterAddress;
 
 	uint public _nextTokenId;
 
-	uint dynamicTraitsSize;
-	mapping(uint => Types.Trait) dynamicTraits;
+	uint private dynamicTraitsSize;
+	mapping(uint => Types.Trait) private dynamicTraits;
 
 	constructor(
 		address collectionAddress,
@@ -74,7 +74,6 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			currentTraitKey = traits[currentIndex].key;
 			nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
 			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
-			//emit TraitUpdated(currentTraitKey, tokenId, traits[currentIndex].value);
 		}
 	}
 
@@ -98,10 +97,6 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	function getCollectionAddress() external view returns (address) {
 		return address(collectionConfig);
-	}
-
-	function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
-		return super.supportsInterface(interfaceId);
 	}
 
 	function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
@@ -149,6 +144,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			handleNewDynamicTrait(trait);
 		}
 		nftTraits[tokenId][traitKey] = trait;
+		emit MetadataUpdate(tokenId);
 		emit TraitUpdated(traitKey, tokenId, trait.value);
 	}
 
@@ -213,5 +209,13 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 		for (uint index; index < dynamicTraitsSize; index++) {
 			traits[index] = dynamicTraits[index];
 		}
+	}
+
+	function getCollectionOwner() external view override returns (address) {
+		return collectionConfig.getCollectionOwner();
+	}
+
+	function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
+		return super.supportsInterface(interfaceId);
 	}
 }

@@ -5,7 +5,7 @@ import "./CollectionConfigBase.sol";
 import "../../libraries/Constants.sol";
 
 contract PassConfig is CollectionConfigBase {
-	constructor() {
+	constructor() Ownable(msg.sender) {
 		randomTraits = false;
 		addTextTrait(Constants.PASS_COLLECTION_LABEL, 100, bytes32(0));
 		addTextTrait(Constants.PASS_COLLECTION_ADDRESS_LABEL, 100, bytes32(0));
@@ -28,5 +28,17 @@ contract PassConfig is CollectionConfigBase {
 
 	function getPassSettings() external pure override returns (bool, Types.Pass memory pass, PassManager passManager) {
 		return (true, pass, passManager);
+	}
+
+	function setPrice(uint _collectionPrice) external override onlyOwner {
+		collectionPrice = _collectionPrice;
+	}
+
+	function isCollectionOwner(address addressToVerify) external view override returns (bool) {
+		return addressToVerify == owner();
+	}
+
+	function getCollectionOwner() external view override returns (address) {
+		return owner();
 	}
 }
