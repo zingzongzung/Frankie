@@ -99,7 +99,7 @@ describe("Surf Game", function () {
       );
     };
 
-    await simulateWaveRequest("25525023012");
+    await simulateWaveRequest("2551823012");
 
     return {
       surfGame,
@@ -117,36 +117,6 @@ describe("Surf Game", function () {
   describe("Surf Forecast integration", function () {
     /**
      *
-     * Test Waves Count
-     *
-     */
-    it("Test Surf waves count", async function () {
-      const { surfGame, simulateWaveRequest } = await deployContracts();
-      const WAVE_CONDITIONS_FROM_DAYS = 10;
-      const NUMBER_OF_RUNS = 5;
-      const INITIAL_DAYS_RAN = 1;
-
-      let waveConditions = await surfGame.getWaveConditionsFromLastDays(
-        WAVE_CONDITIONS_FROM_DAYS
-      );
-      expect(waveConditions.length).to.equal(INITIAL_DAYS_RAN);
-
-      for (let i = 0; i < NUMBER_OF_RUNS; i++) {
-        await simulateWaveRequest("25525023012");
-      }
-      //SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, 55 /* waveMaxLength */, 50 /* power */, 30 /* speed */, SurfTypes.WaveSide.Left, 2 /* wave capacity */);
-
-      waveConditions = await surfGame.getWaveConditionsFromLastDays(
-        WAVE_CONDITIONS_FROM_DAYS
-      );
-      expect(waveConditions.length).to.equal(
-        WAVE_CONDITIONS_FROM_DAYS > NUMBER_OF_RUNS
-          ? NUMBER_OF_RUNS + INITIAL_DAYS_RAN
-          : WAVE_CONDITIONS_FROM_DAYS
-      );
-    });
-    /**
-     *
      * Wave is as expected
      *
      */
@@ -157,15 +127,13 @@ describe("Surf Game", function () {
       const INITIAL_DAYS_RAN = 1;
 
       await simulateWaveRequest("25525023013");
-      const waveConditions = await surfGame.getWaveConditionsFromLastDays(
-        WAVE_CONDITIONS_FROM_DAYS
-      );
+      const waveConditionsRaw = await surfGame.getCurrentWaveConditions();
 
       const lastWave = {
-        waveMaxLength: waveConditions[0].waveMaxLength,
-        wavePower: waveConditions[0].wavePower,
-        waveSpeed: waveConditions[0].waveSpeed,
-        waveCapacity: waveConditions[0].waveCapacity,
+        waveMaxLength: waveConditionsRaw.waveMaxLength,
+        wavePower: waveConditionsRaw.wavePower,
+        waveSpeed: waveConditionsRaw.waveSpeed,
+        waveCapacity: waveConditionsRaw.waveCapacity,
       };
 
       const lastWaveString = JSON.stringify(lastWave, bigIntParser);

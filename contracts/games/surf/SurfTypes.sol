@@ -18,8 +18,8 @@ library SurfTypes {
 
 	struct SurfAction {
 		bytes32 name; //This is used as key as well
-		int32 scoreChange;
 		int32 speedChange;
+		uint scoreChange;
 	}
 
 	struct SurfWave {
@@ -36,10 +36,18 @@ library SurfTypes {
 		Right
 	}
 
+	struct ScoreLog {
+		address surferAddress;
+		uint surferId;
+		uint surferScore;
+	}
+
+	//Represents the wave ridden, actions taken and final score
 	struct RunLog {
+		uint timestamp;
 		bytes32 actionName;
 		int32 currentSpeed;
-		int32 currentScore;
+		uint currentScore;
 	}
 
 	/**
