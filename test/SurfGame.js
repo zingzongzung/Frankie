@@ -395,7 +395,7 @@ describe("Surf Game", function () {
         shopManager,
       } = await deployContracts();
 
-      const numberOfSurfers = 2;
+      const numberOfSurfers = 3;
       const surferId = 0;
 
       for (let i = 0; i < numberOfSurfers; i++) {
@@ -418,15 +418,27 @@ describe("Surf Game", function () {
         23895781004589149129578100458914450004564864664856305970002450n,
         22223344010101010101010101010101010101010101010101010101010101010101010101055n,
       ]);
+
+      while (await surfGame.canRun()) {
+        await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+      }
       //Should be called by the automation
-      await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+
+      await surfGame.startNewRound();
+
       await surfGame.addSurferToQueue(
         surfCollectionNFT.target,
         surferId,
         surfBoardCollectionNFT.target,
         surferId
       );
-      await surfGame.runGame(); //Process wave 2 + 2 elements in the queue
+
+      await simulateMockResponse([155704535415222334451515n]);
+
+      while (await surfGame.canRun()) {
+        await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+      }
+
       await surfGame.addSurferToQueue(
         surfCollectionNFT.target,
         surferId,
@@ -439,7 +451,9 @@ describe("Surf Game", function () {
         23895781004589149129578100458914450004564864664856305970002450n,
       ]);
 
-      await surfGame.runGame(); //Process wave 3 + 2 elements in the queue
+      while (await surfGame.canRun()) {
+        await surfGame.runGame(); //Process wave 1 + 2 elements in the queue
+      }
 
       const logs = await surfGame.getSurferRunLog(
         surfCollectionNFT.target,
@@ -483,6 +497,11 @@ describe("Surf Game", function () {
       }
       console.log(nft);
 
+      const roundZeroLogs = await surfGame.getRoundScore(0);
+      console.log(roundZeroLogs);
+
+      const roundOneLogs = await surfGame.getRoundScore(1);
+      console.log(roundOneLogs);
       // console.log(`Log Length: ${logs.length}`);
     });
   });

@@ -57,6 +57,18 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	mapping(address => mapping(uint256 => uint256)) surferQueuePosition;
 	mapping(address => mapping(uint256 => uint256)) surfboardQueuePosition;
 
+	//HiScores
+	uint currentRound;
+	//This will hold the information about how many participants are in a given round, useful for querying
+	mapping(uint => uint) roundPlayers;
+
+	//This indexes the logs of an address + token id (a player ) + the round, so that when we add
+	//we can go directly to the round score of this address and overwrite the round score there
+	mapping(uint => mapping(address => mapping(uint => uint))) playerRoundIndex;
+
+	//Based on the current round + surfer index we will have  a score that should be manipulated
+	mapping(uint => mapping(uint => SurfTypes.ScoreLog)) roundScores;
+
 	constructor(
 		address randomManager,
 		address surfForecastServiceAddress
@@ -76,42 +88,37 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		_surfboardCollectionAddress = surfboardCollectionAddress;
 	}
 
-	//HiScores
-	uint currentRound;
-	//This will hold the information about how many participants are in a given round, useful for querying
-	mapping(uint => uint) roundPlayers;
+	/***
+	 * Scores Handling
+	 */
 
-	//This indexes the logs of an address + token id (a player ) + the round, so that when we add
-	//we can go directly to the round score of this address and overwrite the round score there
-	mapping(uint => mapping(address => mapping(uint => uint))) playerRoundIndex;
-
-	//Based on the current round + surfer index we will have  a score that should be manipulated
-	mapping(uint => mapping(uint => SurfTypes.ScoreLog)) roundScores;
+	function startNewRound() external {
+		currentRound += 1;
+	}
 
 	function addScore(address surferAddress, uint surferId, uint surferScore) internal {
 		uint playerIndex = playerRoundIndex[currentRound][surferAddress][surferId];
-		uint playerCurrentScore = 0;
-		if (playerIndex == 0) {
-			//Increase player count for this round
+		uint playerCurrentScore = roundScores[currentRound][playerIndex].surferScore;
+		if (playerCurrentScore == 0) {
+			//If player score is 0 , it means it is a new score entry
 			roundPlayers[currentRound] += 1;
 			playerIndex = roundPlayers[currentRound];
 			playerRoundIndex[currentRound][surferAddress][surferId] = playerIndex;
 		} else {
 			playerCurrentScore = roundScores[currentRound][playerIndex].surferScore;
 		}
-
 		roundScores[currentRound][playerIndex] = SurfTypes.ScoreLog(surferAddress, surferId, surferScore + playerCurrentScore);
 	}
 
-	function getScore(uint roundIndex, uint playerIndex) public returns (SurfTypes.ScoreLog memory) {
+	function getScore(uint roundIndex, uint playerIndex) public view returns (SurfTypes.ScoreLog memory) {
 		return roundScores[roundIndex][playerIndex];
 	}
 
-	function getRoundScore(uint roundIndex) public returns (SurfTypes.ScoreLog[] memory _roundScores) {
+	function getRoundScore(uint roundIndex) public view returns (SurfTypes.ScoreLog[] memory _roundScores) {
 		uint roundTotalPlayers = roundPlayers[roundIndex];
 		_roundScores = new SurfTypes.ScoreLog[](roundTotalPlayers);
 		for (uint playerIndex = 0; playerIndex < roundTotalPlayers; playerIndex++) {
-			_roundScores[playerIndex] = getScore(roundIndex, playerIndex);
+			_roundScores[playerIndex] = getScore(roundIndex, playerIndex + 1);
 		}
 	}
 
@@ -198,14 +205,13 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	 * Gamne engine logic
 	 *
 	 **/
-	function canRun() internal view returns (bool) {
+	function canRun() public view returns (bool) {
 		return waveSeeds.length > 0 && !isSurfQueueEmpty();
 	}
 
 	function runGame() external {
 		if (canRun()) {
 			uint256 waveSeed = getAvailableWaveSeed();
-			SurfTypes.SurfWave memory currentWave = getCurrentWaveConditions();
 			uint256 queueProcessLength = getQueueLength() > currentWave.waveCapacity ? currentWave.waveCapacity : getQueueLength();
 
 			while (queueProcessLength > 0) {
