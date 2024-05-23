@@ -5,13 +5,11 @@ import "./ISurfForecastServiceConsumer.sol";
 import "./SurfForecastService.sol";
 
 abstract contract SurfForecastServiceConsumer is ISurfForecastServiceConsumer {
-	SurfForecastService private surfForecastService;
+	SurfForecastService surfForecastService;
 
 	constructor(address surfForecastServiceAddress) {
 		surfForecastService = SurfForecastService(surfForecastServiceAddress);
 	}
 
-	function sendRequest() public returns (bytes32 requestId) {
-		return surfForecastService.sendRequest(address(this));
-	}
+	function sendRequest() public virtual returns (bytes32 requestId);
 }

@@ -12,6 +12,8 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	using Strings for address;
 	using Strings for uint;
 
+	event TokenMinted(address, uint);
+
 	ICollectionConfig private collectionConfig;
 
 	string private tokenURIBaseURL;
@@ -66,7 +68,7 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 
 	function _generateAndMintNFT(uint genes, uint tokenId) internal {
 		_safeMint(tokenMinterAddress[tokenId], tokenId);
-		delete tokenMinterAddress[tokenId];
+
 		Types.Trait[] memory traits = collectionConfig.generateNFT(genes);
 		nftTraitsSize[tokenId] = traits.length;
 		bytes32 currentTraitKey;
@@ -75,6 +77,8 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 			nftTraits[tokenId][currentTraitKey] = traits[currentIndex];
 			nftTraitsKeys[tokenId][currentIndex] = currentTraitKey;
 		}
+		emit TokenMinted(tokenMinterAddress[tokenId], tokenId);
+		delete tokenMinterAddress[tokenId];
 	}
 
 	function handleVRFResponse(uint tokenId, uint[] memory randomWords) external override onlyRole(Roles.NFT_RANDOM_MANAGER) {

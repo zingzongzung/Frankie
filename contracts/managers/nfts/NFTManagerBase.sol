@@ -4,13 +4,11 @@ pragma solidity ^0.8.24;
 // Deploy this contract on Fuji
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "../../collection/collection_nft/ICollectionNFT.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./INFTManager.sol";
 
-abstract contract NFTManagerBase is INFTManager, AccessControl, ReentrancyGuard {
+abstract contract NFTManagerBase is INFTManager, AccessControl {
 	using Strings for address;
 	mapping(address => bool) managedCollections;
 

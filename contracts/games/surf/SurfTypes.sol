@@ -14,7 +14,16 @@ library SurfTypes {
 	bytes32 constant CUT_BACK = bytes32("Cut Back");
 	bytes32 constant AERIAL = bytes32("Aerial");
 	bytes32 constant TUBE = bytes32("Tube");
+	bytes32 constant END = bytes32("Wave End");
+	bytes32 constant LOST_SPEED = bytes32("No Speed");
 	bytes32 constant WIPEOUT = bytes32("Wipeout");
+	bytes32 constant SHARK = bytes32("Shark");
+
+	//Surfer Management
+	bytes32 constant SURF_LEVEL = bytes32("Surf Level");
+	bytes32 constant SURF_EXPERIENCE = bytes32("Surf Experience");
+
+	uint256 constant EXPERIENCE_BY_LEVEL_FACTOR = 50;
 
 	struct SurfAction {
 		bytes32 name; //This is used as key as well

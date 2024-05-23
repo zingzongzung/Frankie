@@ -1,10 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const {
-  functions,
-  roles,
-  admins,
-  deployerAddress,
-} = require("./resources/Configurations.json");
+const { roles } = require("./resources/Configurations.json");
 const randomManagerModule = require("./RandomManager");
 const surfForecastServiceModule = require("./SurfForecastService");
 
@@ -31,6 +26,8 @@ module.exports = buildModule("SurfGame", (m) => {
   m.call(surfGame, "grantRole", [roles.randomManager, nftRandomManager], {
     id: "grantRole_randomManager_on_cSurfGame_to_nftRandomManager",
   });
+
+  m.call(surfGame, "sendRequest");
 
   return { surfForecastService, surfGame };
 });

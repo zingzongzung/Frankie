@@ -7,6 +7,8 @@ import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.s
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 
 contract MockCoordinator is VRFCoordinatorV2Interface {
+	uint requests;
+
 	function getRequestConfig() external view override returns (uint16, uint32, bytes32[] memory) {}
 
 	function requestRandomWords(
@@ -16,7 +18,9 @@ contract MockCoordinator is VRFCoordinatorV2Interface {
 		uint32 callbackGasLimit,
 		uint32 numWords
 	) external override returns (uint256 requestId) {
-		return 0;
+		requestId = requests;
+		requests++;
+		return requestId;
 	}
 
 	function createSubscription() external override returns (uint64 subId) {}
@@ -37,6 +41,6 @@ contract MockCoordinator is VRFCoordinatorV2Interface {
 
 	function mockVRFCoordinatorResponse(address vrfRequestorAddress, uint256[] calldata simulatedRandomWords) external {
 		VRFConsumerBaseV2 vrfConsumarBase = VRFConsumerBaseV2(vrfRequestorAddress);
-		vrfConsumarBase.rawFulfillRandomWords(0, simulatedRandomWords);
+		vrfConsumarBase.rawFulfillRandomWords(requests - 1, simulatedRandomWords);
 	}
 }

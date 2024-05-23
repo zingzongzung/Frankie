@@ -8,6 +8,7 @@ import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../../collection/collection_nft/ICollectionNFT.sol";
 import "../../libraries/Roles.sol";
+import "hardhat/console.sol";
 
 contract NFTRandomManager is VRFConsumerBaseV2, AccessControl {
 	ICollectionNFT nftGenerator;
