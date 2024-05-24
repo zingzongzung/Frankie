@@ -278,6 +278,68 @@ describe("Surf Game", function () {
 
       await expect(addToQueueFunction()).to.not.be.reverted;
     });
+
+    /**
+     *
+     * Queue is populated as expected
+     *
+     */
+    it("Tests queue sizes", async function () {
+      const {
+        surfGame,
+        simulateMockResponse,
+        nftRandomManager,
+        surfCollectionNFT,
+        surfBoardCollectionNFT,
+        shopManager,
+      } = await deployContracts();
+
+      const numberOfSurfers = 5;
+      const surferTokenId = 1;
+      const queueOffset = 1;
+      const firstRunSurferPosition = surferTokenId + queueOffset;
+      const secondRunSurferPosition = numberOfSurfers + queueOffset;
+
+      const getSurferQueuePosition = async () => {
+        return await surfGame.getSurferQueuePosition(
+          surfCollectionNFT.target,
+          surferTokenId
+        );
+      };
+
+      const addToQueueFunction = async () => {
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          surferTokenId,
+          surfBoardCollectionNFT.target,
+          surferTokenId
+        );
+      };
+
+      let surferPosition = await getSurferQueuePosition();
+      expect(surferPosition).to.equal(0);
+
+      for (let i = 0; i < numberOfSurfers; i++) {
+        await shopManager.mintNFT(surfCollectionNFT, "Surfer " + i);
+        await simulateMockResponse();
+        await shopManager.mintNFT(surfBoardCollectionNFT, "Board " + i);
+        await simulateMockResponse();
+        await surfGame.addSurferToQueue(
+          surfCollectionNFT.target,
+          i,
+          surfBoardCollectionNFT.target,
+          i
+        );
+      }
+
+      const oneSizeQueue = await surfGame.queueStatus(1);
+      const fourSizeQueue = await surfGame.queueStatus(4);
+      const fourtySizeQueue = await surfGame.queueStatus(40);
+
+      expect(oneSizeQueue.length).to.equal(1);
+      expect(fourSizeQueue.length).to.equal(4);
+      expect(fourtySizeQueue.length).to.equal(numberOfSurfers);
+    });
     /**
      *
      * The queue position of a surfer in a  first run and in a second run is different

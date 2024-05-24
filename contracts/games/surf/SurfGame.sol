@@ -102,10 +102,14 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 
 	function queueStatus(uint numberOfResults) external view returns (SurfTypes.Surfer[] memory result) {
 		uint256 resultIndex;
-		result = new SurfTypes.Surfer[](getQueueLength());
-		for (uint queueIndex = getQueueFront(); queueIndex <= getQueueBack() || queueIndex < numberOfResults; queueIndex++) {
+		numberOfResults = numberOfResults > getQueueLength() ? getQueueLength() : numberOfResults;
+		result = new SurfTypes.Surfer[](numberOfResults);
+		for (uint queueIndex = getQueueFront(); queueIndex <= getQueueBack(); queueIndex++) {
 			result[resultIndex] = getSurferAtPosition(queueIndex);
 			resultIndex++;
+			if (resultIndex == numberOfResults) {
+				break;
+			}
 		}
 	}
 

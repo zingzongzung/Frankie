@@ -12,6 +12,7 @@ module.exports = buildModule("SurfGame", (m) => {
     "SurfForecastLib",
     surfGameConfig.surfForecastLibAddress
   );
+  // const surfForecastLib = m.contract("SurfForecastLib");
 
   const surfGame = m.contract(
     "SurfGame",
