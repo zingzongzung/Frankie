@@ -27,8 +27,8 @@
   },
   "surfGameConfig": {
     "surfForecastLibAddress": "0x049312bB8316a58B53C0D53C75ff2FE693dD5139",
-    "surferCollectionAddress": "0x473cfa57982a0f27940616aaa43b6dbb66fb6af8",
-    "surfboardCollectionAddress": "0xd08d4bc31f4af20321a49f65486c19a64bb79812"
+    "surferCollectionAddress": "0x486eada224df78ed5aaa29061c439641302044d1",
+    "surfboardCollectionAddress": "0x1fb294419cb17c6763a09504059dcd48289b02c6"
   },
   "deployerAddress": "0xeB1A1f54f0db797ffcfa1E59d93711A75d742c4d",
   "admins": ["0x30ed1a5FB009d6B68EEf3099239727604541bAd4"]

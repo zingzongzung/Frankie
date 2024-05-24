@@ -93,6 +93,11 @@ describe("Surf Game", function () {
       surfForecastService.target
     );
 
+    await surfGame.setSurfGameAddresses(
+      surfCollectionNFT,
+      surfBoardCollectionNFT
+    );
+
     await grantSurfConsumerRoles(surfForecastService, surfGame);
     await grantRandomManagerRoles(nftRandomManager, surfGame);
     await addManagedCollectionToNFTManager(surfGame, surfCollectionNFT);
@@ -355,7 +360,7 @@ describe("Surf Game", function () {
      *
      * 30541981550637216915197905245625419519679093509610777472708130704158474893086
      */
-    it("Seed match expected outcomes", async function () {
+    it(" Tests Specific wave conditions", async function () {
       const {
         surfGame,
         simulateMockResponse,
@@ -402,11 +407,11 @@ describe("Surf Game", function () {
       );
       logs.forEach((log) => {
         console.log(
-          `Action: ${ethers.decodeBytes32String(
+          `${log.timestamp} Action: ${ethers.decodeBytes32String(
             log.actionName
           )} Current Speed: ${log.currentSpeed} Current Score: ${
             log.currentScore
-          }`
+          } Used Board:  ${log.surfboardId}`
         );
       });
       const roundZeroLogs = await surfGame.getRoundScore(0);
@@ -454,7 +459,7 @@ describe("Surf Game", function () {
         await getSurferQueuePosition()
       );
 
-      const expectedResult = `["${surfCollectionNFT.target}","0","${surfBoardCollectionNFT.target}","0"]`;
+      const expectedResult = `["0","0"]`;
       expect(JSON.stringify(result, bigIntParser).toLowerCase()).to.equal(
         expectedResult.toLowerCase()
       );

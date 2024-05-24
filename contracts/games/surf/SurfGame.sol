@@ -67,8 +67,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	}
 
 	function setSurfGameAddresses(address _surferCollectionAddress, address _surfboardCollectionAddress) external {
-		//This is commented out for develop
-		//require(surferCollectionAddress == address(0) && _surfboardCollectionAddress == address(0), "The addresses are already set");
+		require(surferCollectionAddress == address(0) && surfboardCollectionAddress == address(0), "The addresses are already set");
 		surferCollectionAddress = _surferCollectionAddress;
 		surfboardCollectionAddress = _surfboardCollectionAddress;
 		addManagedCollection(_surferCollectionAddress);
@@ -101,10 +100,10 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		return surfboardQueuePosition[surfboardAddress][tokenId];
 	}
 
-	function queueStatus() external view returns (SurfTypes.Surfer[] memory result) {
+	function queueStatus(uint numberOfResults) external view returns (SurfTypes.Surfer[] memory result) {
 		uint256 resultIndex;
 		result = new SurfTypes.Surfer[](getQueueLength());
-		for (uint queueIndex = getQueueFront(); queueIndex <= getQueueBack(); queueIndex++) {
+		for (uint queueIndex = getQueueFront(); queueIndex <= getQueueBack() || queueIndex < numberOfResults; queueIndex++) {
 			result[resultIndex] = getSurferAtPosition(queueIndex);
 			resultIndex++;
 		}
@@ -125,7 +124,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		require(surferAddress != surfBoardAddress, "Surfer address is the same as the surfboard address provided");
 		require(surferQueuePosition[surferAddress][surferId] == 0, "Surfer is already queued");
 		require(surfboardQueuePosition[surfBoardAddress][surfboardId] == 0, "Surfboard is already queued");
-		addToSurfQueue(SurfTypes.Surfer(surferAddress, surferId, surfBoardAddress, surfboardId));
+		addToSurfQueue(SurfTypes.Surfer(surferId, surfboardId));
 		surferQueuePosition[surferAddress][surferId] = getQueueBack();
 		surfboardQueuePosition[surfBoardAddress][surfboardId] = getQueueBack();
 		requestWaveSeedsIfNeeded();
@@ -147,9 +146,9 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 
 			SurfTypes.Surfer memory surfer = getFromSurfQueue();
 			doRun(waveSeed, surfer);
-			surferRunsLength[surfer.surferAddress][surfer.surferId]++;
-			delete surferQueuePosition[surfer.surferAddress][surfer.surferId];
-			delete surfboardQueuePosition[surfer.surfboardAddress][surfer.surfboardId];
+			surferRunsLength[surferCollectionAddress][surfer.surferId]++;
+			delete surferQueuePosition[surferCollectionAddress][surfer.surferId];
+			delete surfboardQueuePosition[surfboardCollectionAddress][surfer.surfboardId];
 
 			emit WaveSurfEnd();
 		} else {
@@ -169,7 +168,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		uint32 waveSections = 0;
 		uint32 actionProbability = 0;
 		uint32 randomStartFactor = 0;
-		int32 currentSpeed = int32(uint32(SurfLib.getBoardSpeed(surfer.surfboardAddress, surfer.surfboardId)));
+		int32 currentSpeed = int32(uint32(SurfLib.getBoardSpeed(surfboardCollectionAddress, surfer.surfboardId)));
 		uint currentScore = 0;
 		bool isWipeout;
 		bool isShark;
@@ -204,7 +203,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		if (!isWipeout) logAction(surfer, SurfTypes.SurfAction(SurfTypes.END, 0, 0), currentSpeed, currentScore);
 
 		//Apply multiplier to score
-		addScore(surfer.surferAddress, surfer.surferId, isShark ? currentScore : currentScore * currentWave.wavePower);
+		addScore(surferCollectionAddress, surfer.surferId, surfer.surfboardId, isShark ? currentScore : currentScore * currentWave.wavePower);
 		increaseLevel(surfer, currentScore);
 	}
 
@@ -214,7 +213,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		int32 currentSpeed,
 		uint currentScore
 	) internal returns (int32 newSpeed, uint newScore, bool isWipeout, bool isShark) {
-		SurfTypes.SurfAction memory currentAction = SurfLib.getActionByProbability(actionProbability, surfer.surferAddress, surfer.surferId);
+		SurfTypes.SurfAction memory currentAction = SurfLib.getActionByProbability(actionProbability, surferCollectionAddress, surfer.surferId);
 		(newSpeed, newScore) = logAction(surfer, currentAction, currentSpeed, currentScore);
 		isShark = currentAction.name == SurfTypes.SHARK;
 		isWipeout = currentAction.name == SurfTypes.WIPEOUT || isShark;
@@ -227,8 +226,8 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		uint currentScore
 	) internal returns (int32 newSpeed, uint newScore) {
 		(newSpeed, newScore) = SurfLib.processAction(currentAction, currentSpeed, currentScore, 0, 0);
-		surferLogs[surfer.surferAddress][surfer.surferId][surferRunsLength[surfer.surferAddress][surfer.surferId]].push(
-			SurfTypes.RunLog(block.timestamp, currentAction.name, newSpeed, newScore)
+		surferLogs[surferCollectionAddress][surfer.surferId][surferRunsLength[surferCollectionAddress][surfer.surferId]].push(
+			SurfTypes.RunLog(block.timestamp, surfer.surfboardId, currentAction.name, newSpeed, newScore)
 		);
 	}
 
@@ -240,7 +239,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	 * @param score The score obtained that will determine experience gained
 	 */
 	function increaseLevel(SurfTypes.Surfer memory surfer, uint score) internal {
-		ICollectionNFT surferContract = ICollectionNFT(surfer.surferAddress);
+		ICollectionNFT surferContract = ICollectionNFT(surferCollectionAddress);
 		(uint currentLevel, uint currentExperience) = SurfLib.getSurferTraits(surferContract, surfer);
 
 		uint256 totalExperience = currentExperience + score;

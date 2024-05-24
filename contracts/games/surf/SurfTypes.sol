@@ -38,14 +38,15 @@ library SurfTypes {
 	}
 
 	struct ScoreLog {
-		address surferAddress;
 		uint surferId;
+		uint surfBoardId;
 		uint surferScore;
 	}
 
 	//Represents the wave ridden, actions taken and final score
 	struct RunLog {
 		uint timestamp;
+		uint surfboardId;
 		bytes32 actionName;
 		int32 currentSpeed;
 		uint currentScore;
@@ -55,9 +56,7 @@ library SurfTypes {
 	 * adf
 	 */
 	struct Surfer {
-		address surferAddress;
 		uint256 surferId;
-		address surfboardAddress;
 		uint256 surfboardId;
 	}
 }

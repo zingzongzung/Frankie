@@ -28,7 +28,7 @@ contract SurfGameScoreManager {
 		return currentRound;
 	}
 
-	function addScore(address surferAddress, uint surferId, uint surferScore) internal {
+	function addScore(address surferAddress, uint surferId, uint surfboardId, uint surferScore) internal {
 		uint playerIndex = playerRoundIndex[currentRound][surferAddress][surferId];
 		uint playerCurrentScore = roundScores[currentRound][playerIndex].surferScore;
 		if (playerCurrentScore == 0) {
@@ -39,7 +39,7 @@ contract SurfGameScoreManager {
 		} else {
 			playerCurrentScore = roundScores[currentRound][playerIndex].surferScore;
 		}
-		roundScores[currentRound][playerIndex] = SurfTypes.ScoreLog(surferAddress, surferId, surferScore + playerCurrentScore);
+		roundScores[currentRound][playerIndex] = SurfTypes.ScoreLog(surferId, surfboardId, surferScore + playerCurrentScore);
 	}
 
 	function getScore(uint roundIndex, uint playerIndex) internal view returns (SurfTypes.ScoreLog memory) {
