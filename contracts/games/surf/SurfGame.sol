@@ -8,9 +8,9 @@ import "../../libraries/NumberUtils.sol";
 import "./SurfLib.sol";
 import "./SurfQueue.sol";
 import "./Functions/SurfForecastServiceConsumer.sol";
-import "../../libraries/BytesToValue.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import "./SurfGameScoreManager.sol";
+import "./SurfForecastLib.sol";
 
 /**
  *
@@ -31,8 +31,6 @@ import "./SurfGameScoreManager.sol";
  * @notice
  */
 contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecastServiceConsumer, AutomationCompatibleInterface, SurfGameScoreManager {
-	using BytesToValue for bytes;
-
 	//Events
 	event SurferAddedToQueue();
 	event WaveSurfEnd();
@@ -170,22 +168,22 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		uint8 currentRunSpecIndex = 0;
 		uint32 waveSections = 0;
 		uint32 actionProbability = 0;
-		uint32 randomBaseScore = 0;
-		int32 currentSpeed = 100; //maybe influenced by the board and the surfer
+		uint32 randomStartFactor = 0;
+		int32 currentSpeed = int32(uint32(SurfLib.getBoardSpeed(surfer.surfboardAddress, surfer.surfboardId)));
 		uint currentScore = 0;
 		bool isWipeout;
 		bool isShark;
 
 		//Calculates total wave sections based on the random + the wave configuration
 		(waveSections, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 2, waveSeedLength);
-		waveSections = currentWave.waveMaxLength - (waveSections % currentWave.waveMaxLength) / 2;
+		waveSections = currentWave.waveMaxLength - (waveSections % currentWave.waveMaxLength);
 
 		//Sets the basic actions every wave will ahve
-		(randomBaseScore, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 1, waveSeedLength);
-		(currentSpeed, currentScore) = logAction(surfer, SurfTypes.SurfAction(SurfTypes.TAKE_OFF, 5, randomBaseScore), currentSpeed, currentScore);
+		(randomStartFactor, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 1, waveSeedLength);
+		(currentSpeed, currentScore) = logAction(surfer, SurfTypes.SurfAction(SurfTypes.TAKE_OFF, int32(randomStartFactor), randomStartFactor), currentSpeed, currentScore);
 
-		(randomBaseScore, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 1, waveSeedLength);
-		(currentSpeed, currentScore) = logAction(surfer, SurfTypes.SurfAction(SurfTypes.BOTTOM_TURN, 5, randomBaseScore), currentSpeed, currentScore);
+		(randomStartFactor, currentRunSpecIndex) = NumberUtils.extractDigits(waveSeed, currentRunSpecIndex, 1, waveSeedLength);
+		(currentSpeed, currentScore) = logAction(surfer, SurfTypes.SurfAction(SurfTypes.BOTTOM_TURN, int32(randomStartFactor), randomStartFactor), currentSpeed, currentScore);
 
 		//Random actions
 		//2 is the number of fixed actions
@@ -207,7 +205,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 
 		//Apply multiplier to score
 		addScore(surfer.surferAddress, surfer.surferId, isShark ? currentScore : currentScore * currentWave.wavePower);
-		SurfLib.increaseLevel(surfer, currentScore);
+		increaseLevel(surfer, currentScore);
 	}
 
 	function logRandomAction(
@@ -236,6 +234,26 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 
 	/**
 	 *
+	 * Updates the traits of the surfer
+	 *
+	 * @param surfer The surfer to update
+	 * @param score The score obtained that will determine experience gained
+	 */
+	function increaseLevel(SurfTypes.Surfer memory surfer, uint score) internal {
+		ICollectionNFT surferContract = ICollectionNFT(surfer.surferAddress);
+		(uint currentLevel, uint currentExperience) = SurfLib.getSurferTraits(surferContract, surfer);
+
+		uint256 totalExperience = currentExperience + score;
+
+		uint256 newLevel = SurfLib.calculateLevel(currentLevel, totalExperience);
+		if (newLevel > currentLevel) {
+			surferContract.setTrait(surfer.surferId, Types.Trait(true, Types.TraitType.Number, SurfTypes.SURF_LEVEL, bytes32(newLevel)));
+		}
+		surferContract.setTrait(surfer.surferId, Types.Trait(true, Types.TraitType.Number, SurfTypes.SURF_EXPERIENCE, bytes32(totalExperience)));
+	}
+
+	/**
+	 *
 	 * Waves logic
 	 *
 	 */
@@ -250,10 +268,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	function getAvailableWaveSeed() internal returns (uint256 waveSeed) {
 		waveSeed = waveSeeds[waveSeeds.length - 1];
 		waveSeeds.pop();
-	}
-
-	function getWaveSeedsLength() external view returns (uint) {
-		return waveSeeds.length;
 	}
 
 	function handleVRFResponse(uint /* tokenId */, uint[] memory randomWords) external override {
@@ -271,19 +285,6 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		}
 	}
 
-	function surfForecastServiceResponseToSurfWave(bytes memory data) internal pure returns (SurfTypes.SurfWave memory surfWave) {
-		uint32 waveMaxLength;
-		uint32 wavePower;
-		uint32 waveSpeed;
-		uint32 waveCapacity;
-		uint256 startPos = 0;
-		(waveMaxLength, startPos) = data.toUint_Dynamic(startPos);
-		(wavePower, startPos) = data.toUint_Dynamic(startPos);
-		(waveSpeed, startPos) = data.toUint_Dynamic(startPos);
-		(waveCapacity, startPos) = data.toUint_Dynamic(startPos);
-		surfWave = SurfTypes.SurfWave(SurfTypes.SUPER_TUBOS, waveMaxLength, wavePower, waveSpeed, SurfTypes.WaveSide.Left, waveCapacity);
-	}
-
 	function handleForecastServiceResponse(bytes32 /*requestId*/, bytes memory response) external override {
 		/* shouuld use request id to verify */
 		setWaveConditions(response);
@@ -294,7 +295,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 	 * Set wave will be set daily by the integration with Weather Forecast API
 	 */
 	function setWaveConditions(bytes memory response) internal {
-		currentWave = surfForecastServiceResponseToSurfWave(response);
+		currentWave = SurfForecastLib.surfForecastServiceResponseToSurfWave(response);
 	}
 
 	function getCurrentWaveConditions() external view returns (SurfTypes.SurfWave memory) {
@@ -347,7 +348,7 @@ contract SurfGame is NFTManagerBase, RandomConsumerBase, SurfQueue, SurfForecast
 		treshold = _treshold;
 	}
 
-	// Function to check if 60 seconds have passed since the initial timestamp
+	// Function to check if treshold seconds have passed since the initial timestamp
 	function hasTresholdPassed() internal view returns (bool) {
 		if (block.timestamp >= initialTimestamp + treshold) {
 			return true;

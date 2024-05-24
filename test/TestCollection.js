@@ -237,8 +237,10 @@ describe("NFT collectionNFT", function () {
         collectionNFT,
         nftRandomManager,
         shopManager,
+        mockCoordinator,
         gameManager,
-      } = await deployContracts(100000000000);
+        simulateMockResponse,
+      } = await deployContracts();
 
       const [owner, otherAccount] = await ethers.getSigners();
 
@@ -258,6 +260,34 @@ describe("NFT collectionNFT", function () {
         await passNFT.getTokensOwnedBy(otherAccount),
         bigIntParser
       );
+
+      await shopManager.mintNFT(collectionNFT.target, "Board 1", {
+        value: ethers.parseEther("1"),
+      });
+      await simulateMockResponse();
+
+      await shopManager
+        .connect(otherAccount)
+        .mintNFT(collectionNFT.target, "Board 2", {
+          value: ethers.parseEther("1"),
+        });
+      await simulateMockResponse();
+      await shopManager
+        .connect(otherAccount)
+        .mintNFT(collectionNFT.target, "Board 3", {
+          value: ethers.parseEther("1"),
+        });
+      await simulateMockResponse();
+
+      const otherNFTs = JSON.stringify(
+        await collectionNFT.getTokensOwnedBy(otherAccount),
+        bigIntParser
+      );
+
+      expect(
+        otherNFTs,
+        "The generated trait list is not as expected "
+      ).to.equal('["1","2"]');
 
       expect(
         ownerPasses,

@@ -161,29 +161,26 @@ contract CollectionNFT is ICollectionNFT, RandomConsumerBase, AccessControl, ERC
 	 * Token ownership
 	 *
 	 */
-	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory) {
+	function getTokensOwnedBy(address wallet) external view returns (uint256[] memory tokensOwned) {
 		uint256 balance = balanceOf(wallet);
-		uint256[] memory tokensOwned = new uint256[](balance);
-		uint tokenId;
-		for (uint256 i = 0; i < balance; i++) {
-			tokenId = tokenOfOwnerByIndexRecursive(wallet, i, tokenId);
-			tokensOwned[i] = tokenId;
+		if (balance > 0) {
+			tokensOwned = new uint256[](balance);
+			uint256 i = 0;
+			uint foundTokenId; //First iteration needs to start from 0
+			do {
+				foundTokenId = tokenOfOwnerByIndexRecursive(wallet, foundTokenId);
+				tokensOwned[i] = foundTokenId;
+				foundTokenId++;
+				i++;
+			} while (i < balance);
 		}
-		return tokensOwned;
 	}
 
-	function tokenOfOwnerByIndexRecursive(address owner, uint256 currentIndex, uint256 lastToken) internal view returns (uint256) {
-		if (currentIndex < lastToken) {
-			currentIndex = lastToken + 1;
-		}
-		return tokenOfOwnerByIndexRecursive(owner, currentIndex);
-	}
-
-	function tokenOfOwnerByIndexRecursive(address owner, uint256 currentIndex) internal view returns (uint256) {
-		if (ownerOf(currentIndex) == owner) {
-			return currentIndex;
+	function tokenOfOwnerByIndexRecursive(address owner, uint256 currentTokenId) internal view returns (uint256) {
+		if (ownerOf(currentTokenId) == owner) {
+			return currentTokenId;
 		} else {
-			return tokenOfOwnerByIndexRecursive(owner, currentIndex + 1);
+			return tokenOfOwnerByIndexRecursive(owner, currentTokenId + 1);
 		}
 	}
 

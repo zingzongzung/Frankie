@@ -59,6 +59,21 @@ async function setupCharacterAttributes(collectionInstance) {
   );
 }
 
+/**
+ *
+ * Define collection traits
+ *
+ */
+async function setupBoardAttributes(collectionInstance) {
+  await collectionInstance.addNumberTrait(
+    stringToBytes32("Speed"),
+    100,
+    20,
+    100
+  );
+}
+
 module.exports = {
   setupCharacterAttributes,
+  setupBoardAttributes,
 };

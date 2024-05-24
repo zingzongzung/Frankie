@@ -4,8 +4,6 @@ pragma solidity ^0.8.24;
 import "../../collection/collection_nft/ICollectionNFT.sol";
 
 library SurfTypes {
-	bytes32 constant SUPER_TUBOS = bytes32("Super Tubos");
-
 	bytes32 constant TAKE_OFF = bytes32("Take off");
 	bytes32 constant BOTTOM_TURN = bytes32("Bottom turn");
 
@@ -23,6 +21,8 @@ library SurfTypes {
 	bytes32 constant SURF_LEVEL = bytes32("Surf Level");
 	bytes32 constant SURF_EXPERIENCE = bytes32("Surf Experience");
 
+	bytes32 constant BOARD_SPEED = bytes32("Speed");
+
 	uint256 constant EXPERIENCE_BY_LEVEL_FACTOR = 50;
 
 	struct SurfAction {
@@ -32,17 +32,9 @@ library SurfTypes {
 	}
 
 	struct SurfWave {
-		bytes32 name;
 		uint32 waveMaxLength;
-		uint32 wavePower; //maybe modifier for some checks
+		uint32 wavePower;
 		uint32 waveSpeed;
-		WaveSide waveSide; //modifier for some checks
-		uint32 waveCapacity;
-	}
-
-	enum WaveSide {
-		Left,
-		Right
 	}
 
 	struct ScoreLog {

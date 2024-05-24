@@ -15,6 +15,7 @@ const {
 
 const {
   setupCharacterAttributes,
+  setupBoardAttributes,
 } = require("./Configs/BaseCollectionConfiguration.js");
 
 //npx hardhat test ./test/SurfGame.js
@@ -51,7 +52,7 @@ describe("Surf Game", function () {
     } = await deployCollection(
       1,
       "Surboards of Sydney",
-      null,
+      setupBoardAttributes,
       nftRandomManager,
       shopManager,
       gameManager,
@@ -79,7 +80,14 @@ describe("Surf Game", function () {
       34
     );
 
-    const SurfGame = await ethers.getContractFactory("SurfGame");
+    const SurfForecastLib = await ethers.getContractFactory("SurfForecastLib");
+    const surfForecastLib = await SurfForecastLib.deploy();
+    // const SurfLib = await ethers.getContractFactory("SurfLib");
+    // const surfLib = await SurfLib.deploy();
+
+    const SurfGame = await ethers.getContractFactory("SurfGame", {
+      libraries: { SurfForecastLib: surfForecastLib },
+    });
     const surfGame = await SurfGame.deploy(
       nftRandomManager.target,
       surfForecastService.target
@@ -139,7 +147,7 @@ describe("Surf Game", function () {
       const lastWaveString = JSON.stringify(lastWave, bigIntParser);
 
       expect(lastWaveString).to.equal(
-        '{"waveMaxLength":"55","wavePower":"50","waveSpeed":"30","waveCapacity":"3"}'
+        '{"waveMaxLength":"55","wavePower":"50","waveSpeed":"30"}'
       );
     });
   });
@@ -262,8 +270,6 @@ describe("Surf Game", function () {
         22223344010101010101010101010101010101010101010101010101010101010101010101055n,
       ]);
       await surfGame.performUpkeep("0x");
-      const dynamicTraits = await surfCollectionNFT.getDynamicTraits();
-      console.log(dynamicTraits);
 
       await expect(addToQueueFunction()).to.not.be.reverted;
     });
@@ -349,7 +355,7 @@ describe("Surf Game", function () {
      *
      * 30541981550637216915197905245625419519679093509610777472708130704158474893086
      */
-    it("Gets waves seeds from random and process game", async function () {
+    it("Seed match expected outcomes", async function () {
       const {
         surfGame,
         simulateMockResponse,
@@ -360,7 +366,7 @@ describe("Surf Game", function () {
         simulateWaveRequest,
       } = await deployContracts();
 
-      await simulateWaveRequest("2581322212");
+      await simulateWaveRequest("2591322412");
 
       const numberOfSurfers = 1;
       const surferId = 0;
@@ -378,9 +384,11 @@ describe("Surf Game", function () {
         );
       }
 
+      logCollectionTraits(surfBoardCollectionNFT, 0);
+
       await simulateMockResponse(
         [
-          7463541425543214564663771616570002276227663761356222266756545213773147566613n,
+          18307275068061274254228106772891513395407423572721110282118756914193460810052n,
         ],
         20
       );
@@ -569,6 +577,34 @@ describe("Surf Game", function () {
     // });
   });
 });
+
+const logCollectionTraits = async (collection, id) => {
+  const nftJSONAttributes = (await collection.getNFTDetails(id))[1];
+
+  let nft = { traits: [] };
+  for (let i = 0; i < nftJSONAttributes.length; i++) {
+    const attribute = nftJSONAttributes[i];
+    if (attribute.isDefined) {
+      let traitKey = attribute.key;
+      let traitLabel = bytes32ToString(attribute.key);
+      let traitValue;
+      let traitImage;
+      if (attribute.traitType === 1n) {
+        traitValue = parseInt(attribute.value, 16);
+      } else {
+        traitValue = bytes32ToString(attribute.value);
+        if (attribute.traitType === 2n) {
+          traitImage = await collection.getTraitOptionsImage(
+            attribute.key,
+            attribute.value
+          );
+        }
+      }
+      nft.traits.push({ traitKey, traitLabel, traitValue, traitImage });
+    }
+  }
+  console.log(nft);
+};
 
 const bigIntParser = (key, value) => {
   return typeof value === "bigint" ? value.toString() : value;

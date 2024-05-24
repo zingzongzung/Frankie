@@ -42,11 +42,11 @@ contract SurfGameScoreManager {
 		roundScores[currentRound][playerIndex] = SurfTypes.ScoreLog(surferAddress, surferId, surferScore + playerCurrentScore);
 	}
 
-	function getScore(uint roundIndex, uint playerIndex) public view returns (SurfTypes.ScoreLog memory) {
+	function getScore(uint roundIndex, uint playerIndex) internal view returns (SurfTypes.ScoreLog memory) {
 		return roundScores[roundIndex][playerIndex];
 	}
 
-	function getRoundScore(uint roundIndex) public view returns (SurfTypes.ScoreLog[] memory _roundScores) {
+	function getRoundScore(uint roundIndex) external view returns (SurfTypes.ScoreLog[] memory _roundScores) {
 		uint roundTotalPlayers = roundPlayers[roundIndex];
 		_roundScores = new SurfTypes.ScoreLog[](roundTotalPlayers);
 		for (uint playerIndex = 0; playerIndex < roundTotalPlayers; playerIndex++) {

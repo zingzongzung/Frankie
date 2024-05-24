@@ -1,5 +1,5 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const { roles } = require("./resources/Configurations.json");
+const { roles, surfGameConfig } = require("./resources/Configurations.json");
 const randomManagerModule = require("./RandomManager");
 const surfForecastServiceModule = require("./SurfForecastService");
 
@@ -8,10 +8,16 @@ module.exports = buildModule("SurfGame", (m) => {
   const { nftRandomManager } = m.useModule(randomManagerModule);
   const { surfForecastService } = m.useModule(surfForecastServiceModule);
 
-  const surfGame = m.contract("SurfGame", [
-    nftRandomManager,
-    surfForecastService,
-  ]);
+  const surfForecastLib = m.contractAt(
+    "SurfForecastLib",
+    surfGameConfig.surfForecastLibAddress
+  );
+
+  const surfGame = m.contract(
+    "SurfGame",
+    [nftRandomManager, surfForecastService],
+    { libraries: { SurfForecastLib: surfForecastLib } }
+  );
 
   //Surf Forecast Service
   m.call(surfForecastService, "grantRole", [

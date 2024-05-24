@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./SurfTypes.sol";
+import "../../collection/collection_config/ICollectionConfig.sol";
 
 library SurfLib {
 	/**
@@ -36,24 +37,9 @@ library SurfLib {
 		currentExperience = uint(traitValues[1]);
 	}
 
-	/**
-	 *
-	 * Updates the traits of the surfer
-	 *
-	 * @param surfer The surfer to update
-	 * @param score The score obtained that will determine experience gained
-	 */
-	function increaseLevel(SurfTypes.Surfer memory surfer, uint score) internal {
-		ICollectionNFT surferContract = ICollectionNFT(surfer.surferAddress);
-		(uint currentLevel, uint currentExperience) = SurfLib.getSurferTraits(surferContract, surfer);
-
-		uint256 totalExperience = currentExperience + score;
-
-		uint256 newLevel = SurfLib.calculateLevel(currentLevel, totalExperience);
-		if (newLevel > currentLevel) {
-			surferContract.setTrait(surfer.surferId, Types.Trait(true, Types.TraitType.Number, SurfTypes.SURF_LEVEL, bytes32(newLevel)));
-		}
-		surferContract.setTrait(surfer.surferId, Types.Trait(true, Types.TraitType.Number, SurfTypes.SURF_EXPERIENCE, bytes32(totalExperience)));
+	function getBoardSpeed(address surfboardAddress, uint surfboardId) internal view returns (uint boardSpeed) {
+		ICollectionNFT surfboardContract = ICollectionNFT(surfboardAddress);
+		return uint(surfboardContract.getTraitValue(surfboardId, SurfTypes.BOARD_SPEED));
 	}
 
 	/**
@@ -105,10 +91,10 @@ library SurfLib {
 		actionChances = new uint8[](size);
 		actionDistribution = new SurfTypes.SurfAction[](size);
 
-		actionChances[0] = 20;
+		actionChances[0] = 24;
 		actionDistribution[0] = SurfTypes.SurfAction(SurfTypes.SPEED_UP, 5, 1);
 
-		actionChances[1] = 20;
+		actionChances[1] = 25;
 		actionDistribution[1] = SurfTypes.SurfAction(SurfTypes.SPEED_DOWN, -5, 1);
 
 		actionChances[2] = 20;
@@ -120,10 +106,10 @@ library SurfLib {
 		actionChances[4] = 10;
 		actionDistribution[4] = SurfTypes.SurfAction(SurfTypes.TUBE, -20, 20);
 
-		actionChances[5] = 19;
+		actionChances[5] = 10;
 		actionDistribution[5] = SurfTypes.SurfAction(SurfTypes.WIPEOUT, 0, 0);
 
 		actionChances[6] = 1;
-		actionDistribution[5] = SurfTypes.SurfAction(SurfTypes.SHARK, 0, 0);
+		actionDistribution[6] = SurfTypes.SurfAction(SurfTypes.SHARK, 0, 0);
 	}
 }
