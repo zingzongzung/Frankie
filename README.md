@@ -112,6 +112,7 @@ Before deploying, you should set the values in the `Configurations.json` file. T
   - `AvaxUSD`: The address for the AVAX to USD aggregator on the chain you are deploying on.
 - **Roles**: This does not need to be changed and is used to set the roles on the solution's smart contracts.
 - **SurfGameConfig**: This holds some configurations for the surf game.
+  - `surfForecastLibAddress`: The address of forecast lib, no need to define unless you want to reuse a lib already deployed. Check SurfGame ignition module line 10
   - `surferCollectionAddress`: The address of the collection representing the surfer NFT in the surf game.
   - `surfboardCollectionAddress`: The address of the collection representing the surfboard NFT in the surf game.
 - **DeployerAddress**: The wallet executing the deploy.
