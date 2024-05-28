@@ -134,3 +134,15 @@ npx hardhat ignition deploy ignition/modules/NameOfTheModule.js --network fuji
 - **SurfGame**: Run this module to deploy the surf game.
   - **Dependencies**: SurfForecastService
 - **GameSetup**: This should be run last, as it sets the forwarder addresses with the addresses obtained from Chainlink automation services after deploying the surf game.
+
+## Additional Information
+
+There are additional scripts created to help manage the ecosystem. All these utilities are located under the `scripts` folder.
+
+### Admin Scripts
+
+In the `admin` folder, there is a script that allows us to send the ABI, addresses, and other configurations of the deployed smart contracts to our server running the frontend app. This helps streamline the entire process and speeds up development.
+
+### Functions Scripts
+
+In the `functions` folder, the `gen-offchain-data.js` script generates the secrets file and the secrets URL that will be used when interacting with the Chainlink function.
