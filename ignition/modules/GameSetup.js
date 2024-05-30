@@ -15,10 +15,10 @@ module.exports = buildModule("GameSetup", (m) => {
     surfGameConfig.surfboardCollectionAddress,
   ]);
 
-  // m.call(surfGame, "setRunGameForwarderAddress", [automation.runGameForwarder]);
-  // m.call(surfGame, "setWaveUpdateForwarderAddress", [
-  //   automation.setWaveForwarder,
-  // ]);
+  m.call(surfGame, "setRunGameForwarderAddress", [automation.runGameForwarder]);
+  m.call(surfGame, "setWaveUpdateForwarderAddress", [
+    automation.setWaveForwarder,
+  ]);
 
   return { surfGame };
 });

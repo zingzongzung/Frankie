@@ -8,11 +8,11 @@ module.exports = buildModule("SurfGame", (m) => {
   const { nftRandomManager } = m.useModule(randomManagerModule);
   const { surfForecastService } = m.useModule(surfForecastServiceModule);
 
-  // const surfForecastLib = m.contractAt(
-  //   "SurfForecastLib",
-  //   surfGameConfig.surfForecastLibAddress
-  // );
-  const surfForecastLib = m.contract("SurfForecastLib");
+  const surfForecastLib = m.contractAt(
+    "SurfForecastLib",
+    surfGameConfig.surfForecastLibAddress
+  );
+  // const surfForecastLib = m.contract("SurfForecastLib");
 
   const surfGame = m.contract(
     "SurfGame",

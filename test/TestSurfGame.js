@@ -462,22 +462,12 @@ describe("Surf Game", function () {
 
       await surfGame.performUpkeep("0x"); //Process wave 1 + 2 elements in the queue
 
-      const logs = await surfGame.getSurferRunLog(
-        surfCollectionNFT.target,
-        surferId,
-        0
+      const roundZeroLogs = JSON.stringify(
+        await surfGame.getRoundScore(0),
+        bigIntParser
       );
-      logs.forEach((log) => {
-        console.log(
-          `${log.timestamp} Action: ${ethers.decodeBytes32String(
-            log.actionName
-          )} Current Speed: ${log.currentSpeed} Current Score: ${
-            log.currentScore
-          } Used Board:  ${log.surfboardId}`
-        );
-      });
-      const roundZeroLogs = await surfGame.getRoundScore(0);
-      console.log(roundZeroLogs);
+
+      expect(roundZeroLogs).to.equal('[["0","0","75"]]');
     });
 
     /**
@@ -670,7 +660,7 @@ const logCollectionTraits = async (collection, id) => {
       nft.traits.push({ traitKey, traitLabel, traitValue, traitImage });
     }
   }
-  console.log(nft);
+  //console.log(nft);
 };
 
 const bigIntParser = (key, value) => {

@@ -40,10 +40,6 @@ For future iterations, we aim to enhance the synchronization of traits to make i
 
 ### Surf Game
 
-The surf game provides a use case for the generated NFTs, integrating them into an engaging on-chain game. Players need both a surfer and a surfboard NFT to participate. The game uses Chainlink services for various functionalities, including wave condition updates and random event generation.
-
-### Surf Game
-
 The surf game integrates the generated NFTs into an engaging on-chain game. Players need both a surfer and a surfboard NFT to participate. The game leverages Chainlink services for various functionalities, including wave condition updates and random event generation.
 
 #### Flow

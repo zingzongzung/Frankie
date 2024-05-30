@@ -13,8 +13,8 @@
     "encryptedSecretsUrls": "0xd7be07bedf3ef0a8844f989570dbc07602cc92975fc5016a513d07f68e2e062fe1c56a53bb0f55760f1183fc98e3356fab2b2f93153d27c1a4ae7f729f800bd41b77cb7022ad75b8682c3b6e23fa50eb7c8bf3e6ab295211043209ab060ca25e52c5fc2bfb50cd66d43d3549aa415a288a29d5b37dbb6d44106d68ff3320e836cbc9caee8be445559352e55ebb83af9a8c8ebefa831a75d0b61ec2e88bddbecb754cee4e7d59b3a3b2d1afc4596bb4ec4e"
   },
   "automation": {
-    "runGameForwarder": "0x2013E8ae0D9Fd37573aaB6910145FCCD56540495",
-    "setWaveForwarder": "0x3b97BD6B1B95aC3F752f5aAFe84877DDE9c0aDa0"
+    "runGameForwarder": "0xE1EC949dA281dFB2eA0006eF41d632d60D414ab3",
+    "setWaveForwarder": "0x94103b90E3F3c54cc4038C42A37A09cd054E6E8C"
   },
   "priceFeed": {
     "AvaxUSD": "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"
@@ -27,7 +27,7 @@
   },
   "surfGameConfig": {
     "surfForecastLibAddress": "0xA40439f40E49dF7bD8b6a8b3858b00bF74342de5",
-    "surferCollectionAddress": "0x486eada224df78ed5aaa29061c439641302044d1",
+    "surferCollectionAddress": "0x7ea8402965946f9eb97cf8764e2854428ff4be2f",
     "surfboardCollectionAddress": "0x1fb294419cb17c6763a09504059dcd48289b02c6"
   },
   "deployerAddress": "0xeB1A1f54f0db797ffcfa1E59d93711A75d742c4d",
