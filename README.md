@@ -142,3 +142,20 @@ In the `admin` folder, there is a script that allows us to send the ABI, address
 ### Functions Scripts
 
 In the `functions` folder, the `gen-offchain-data.js` script generates the secrets file and the secrets URL that will be used when interacting with the Chainlink function.
+
+### Front End
+
+For the front end, we chose to use OutSystems. OutSystems is a low-code platform that allows people to create web and mobile applications. We believe that by using OutSystems, we will raise awareness of blockchain environments among developers who were previously not exposed to it.
+
+As part of this hackathon, we created many useful reusable libraries, such as libraries to consume Smart Contract Methods and interact with Metamask. We plan to release these libraries later on the OutSystems community.
+
+The Front End source code for the Frankie product can be found on the OutSystems Community Page: [Frankie NFT Maker](https://www.outsystems.com/forge/component-overview/18872/frankie-nft-maker-o11).
+
+## Accessing the Product
+
+To access the product, you can use the following link with the credentials provided:
+
+- Link: [Frankie Product Access](https://personal-ixqe4210.outsystemscloud.com/Frankie/)
+- User: chain.link
+- Pass: chain.link
+
