@@ -149,7 +149,7 @@ For the front end, we chose to use OutSystems. OutSystems is a low-code platform
 
 As part of this hackathon, we created many useful reusable libraries, such as libraries to consume Smart Contract Methods and interact with Metamask. We plan to release these libraries later on the OutSystems community.
 
-The Front End source code for the Frankie product can be found on the OutSystems Community Page: [Frankie NFT Maker](https://www.outsystems.com/forge/component-overview/18872/frankie-nft-maker-o11).
+The Front End source code for the Frankie product can be found on the OutSystems Community Page: [Frankie NFT Maker](https://www.outsystems.com/forge/component-overview/18872/frankie-nft-maker-o11). Detailed documentation is also available [here](https://www.outsystems.com/forge/component-documentation/18872/frankie-nft-maker-o11/0).
 
 ## Accessing the Product
 
